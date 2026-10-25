@@ -14,6 +14,7 @@ class OtpNotificationListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         super.onNotificationPosted(sbn)
         if (sbn == null) return
+        if (sbn.packageName == packageName) return // Ignore self-notifications to prevent loop
 
         val extras = sbn.notification?.extras ?: return
         val title = extras.getString(Notification.EXTRA_TITLE) ?: ""

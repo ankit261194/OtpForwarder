@@ -44,6 +44,11 @@ object KeywordManager {
         return updated
     }
 
+    fun resetDefaults(context: Context): List<String> {
+        saveKeywords(context, DEFAULT_KEYWORDS)
+        return DEFAULT_KEYWORDS
+    }
+
     private fun saveKeywords(context: Context, keywords: List<String>) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val jsonArray = JSONArray()

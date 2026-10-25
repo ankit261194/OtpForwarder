@@ -390,6 +390,16 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                 }
 
                 if (isSmsEnabled) {
+                    val hasSmsPerm = ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
+                    if (!hasSmsPerm) {
+                        Button(
+                            onClick = onRequestPermissions,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828)),
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        ) {
+                            Text("⚠️ Allow SMS Permission First", fontSize = 12.sp)
+                        }
+                    }
                     Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
                         value = smsPhone,
@@ -453,10 +463,14 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
 fun KeywordsTab(context: Context) {
     var keywordsList by remember { mutableStateOf(KeywordManager.getKeywords(context)) }
     var newKeywordText by remember { mutableStateOf("") }
+    var testSender by remember { mutableStateOf("AD-UPEGOV-S") }
+    var testMessage by remember { mutableStateOf("OTP for Authentication is : 240833 --eDistrict UP") }
+    var testResult by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         Text(
@@ -499,16 +513,29 @@ fun KeywordsTab(context: Context) {
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-        Text(
-            text = "Current Active Rules (${keywordsList.size}):",
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 14.sp,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+        Spacer(modifier = Modifier.height(14.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Current Active Rules (${keywordsList.size}):",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp
+            )
+            TextButton(
+                onClick = {
+                    keywordsList = KeywordManager.resetDefaults(context)
+                    Toast.makeText(context, "Reset to Default Rules", Toast.LENGTH_SHORT).show()
+                }
+            ) {
+                Text("Reset Defaults", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+            }
+        }
 
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(keywordsList) { kw ->
+        Column(modifier = Modifier.fillMaxWidth()) {
+            keywordsList.forEach { kw ->
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
@@ -537,6 +564,55 @@ fun KeywordsTab(context: Context) {
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Live Test Simulator Card
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFEDE7F6))
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Text("🧪 Test Keyword Match (Live Simulator)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF4527A0))
+                Text("Message aur Sender paste karke test karein ki app ise forward karegi ya nahi:", fontSize = 11.sp, color = Color.DarkGray)
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = testSender,
+                    onValueChange = { testSender = it },
+                    label = { Text("Sender ID (e.g. AD-UPEGOV-S)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                OutlinedTextField(
+                    value = testMessage,
+                    onValueChange = { testMessage = it },
+                    label = { Text("SMS Message Body") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 2
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(
+                    onClick = {
+                        val matches = KeywordManager.matches(context, testSender, testMessage)
+                        testResult = if (matches) "✅ MATCH HO GAYA! Ye message forward hoga." else "❌ MATCH NAHI HUA! Ye message reject hoga."
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF512DA8))
+                ) {
+                    Text("Check Match")
+                }
+                if (testResult.isNotEmpty()) {
+                    Text(
+                        text = testResult,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (testResult.startsWith("✅")) Color(0xFF2E7D32) else Color(0xFFC62828),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -559,15 +635,23 @@ fun HistoryTab(context: Context) {
                 fontWeight = FontWeight.Bold,
                 fontSize = 17.sp
             )
-            if (historyList.isNotEmpty()) {
-                TextButton(
-                    onClick = {
-                        HistoryManager.clearHistory(context)
-                        historyList = emptyList()
-                        Toast.makeText(context, "History Cleared!", Toast.LENGTH_SHORT).show()
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = {
+                    historyList = HistoryManager.getHistory(context)
+                    Toast.makeText(context, "History Refreshed", Toast.LENGTH_SHORT).show()
+                }) {
+                    Text("🔄", fontSize = 16.sp)
+                }
+                if (historyList.isNotEmpty()) {
+                    TextButton(
+                        onClick = {
+                            HistoryManager.clearHistory(context)
+                            historyList = emptyList()
+                            Toast.makeText(context, "History Cleared!", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Text("Clear All", color = Color.Red, fontSize = 12.sp)
                     }
-                ) {
-                    Text("Clear All", color = Color.Red, fontSize = 12.sp)
                 }
             }
         }

