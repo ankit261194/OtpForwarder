@@ -259,6 +259,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
     // Security & Child Protection State
     var isAdminActive by remember { mutableStateOf(isDeviceAdminActive(context)) }
     var isIconHidden by remember { mutableStateOf(isLauncherIconHidden(context)) }
+    var isSilentMode by remember { mutableStateOf(!prefs.getBoolean("show_screen_popups", false)) }
 
     Column(
         modifier = Modifier
@@ -596,6 +597,36 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                                 isAdminActive = false
                                 Toast.makeText(context, "Anti-Uninstall Lock Disabled", Toast.LENGTH_SHORT).show()
                             }
+                        }
+                    )
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 12.dp))
+
+                // 5C: Silent Stealth Mode (100% Chupchap / No Screen Pop-ups)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Silent Stealth Mode", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            text = if (isSilentMode)
+                                "🟢 Active (Chupchap): Screen par koi notification ya aawaz nahi aayegi"
+                            else
+                                "🔴 Inactive: Screen par pop-up notification aayega",
+                            fontSize = 11.sp,
+                            color = if (isSilentMode) Color(0xFF2E7D32) else Color.Gray
+                        )
+                    }
+                    Switch(
+                        checked = isSilentMode,
+                        onCheckedChange = { silent ->
+                            isSilentMode = silent
+                            prefs.edit().putBoolean("show_screen_popups", !silent).apply()
+                            val msg = if (silent) "Silent Mode ON: Screen par koi notification nahi aayega!" else "Silent Mode OFF: Pop-up notification ON"
+                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                         }
                     )
                 }

