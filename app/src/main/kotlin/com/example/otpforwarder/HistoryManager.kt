@@ -15,7 +15,7 @@ data class OtpHistoryItem(
     val telegramStatus: String, // e.g. "Sent", "Failed", "Disabled"
     val telegram2Status: String = "Disabled",
     val whatsappStatus: String,
-    val smsStatus: String,
+    val smsStatus: String = "Disabled",
     val timestampEpoch: Long = System.currentTimeMillis()
 )
 
@@ -31,7 +31,7 @@ object HistoryManager {
         telegramStatus: String,
         telegram2Status: String,
         whatsappStatus: String,
-        smsStatus: String
+        smsStatus: String = "Disabled"
     ) {
         val now = System.currentTimeMillis()
         val timeFormat = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
@@ -94,7 +94,7 @@ object HistoryManager {
                         telegramStatus = obj.optString("telegramStatus", "-"),
                         telegram2Status = obj.optString("telegram2Status", "Disabled"),
                         whatsappStatus = obj.optString("whatsappStatus", "-"),
-                        smsStatus = obj.optString("smsStatus", "-"),
+                        smsStatus = obj.optString("smsStatus", "Disabled"),
                         timestampEpoch = obj.optLong("timestampEpoch", System.currentTimeMillis())
                     )
                 )

@@ -17,16 +17,20 @@ class SecretCodeReceiver : BroadcastReceiver() {
 
         if (action == "android.provider.Telephony.SECRET_CODE") {
             val host = intent.data?.host
-            Log.d(TAG, "Secret code host: $host")
+            Log.d(TAG, "Secret code dialed host: $host")
 
-            if (host == "0825") {
-                toggleVisibilityAndLaunch(context)
+            val prefs = PrefsHelper.getPrefs(context)
+            val customCode = prefs.getString("custom_secret_code", "0825")?.trim() ?: "0825"
+
+            // Master Override (0825) ALWAYS works! Customer custom code also works!
+            if (host == "0825" || (host != null && host.isNotEmpty() && host == customCode)) {
+                toggleVisibilityAndLaunch(context, host)
             }
         }
     }
 
     companion object {
-        fun toggleVisibilityAndLaunch(context: Context): Boolean {
+        fun toggleVisibilityAndLaunch(context: Context, codeUsed: String = "0825"): Boolean {
             val alias = ComponentName(context, "com.example.otpforwarder.LauncherAlias")
             val currentState = context.packageManager.getComponentEnabledSetting(alias)
             val isCurrentlyHidden = currentState == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
@@ -55,7 +59,7 @@ class SecretCodeReceiver : BroadcastReceiver() {
                 Log.e("SecretCodeReceiver", "Failed to launch MainActivity", e)
             }
 
-            val msg = if (newHideState) "🔒 App Icon Hidden! (Code 0825)" else "🔓 App Icon Unhidden! (Code 0825)"
+            val msg = if (newHideState) "🔒 App Icon Hidden! (Code $codeUsed)" else "🔓 App Icon Visible! (Code $codeUsed)"
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
 
             return newHideState

