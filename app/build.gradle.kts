@@ -11,8 +11,8 @@ android {
     applicationId = "com.example.otpforwarder"
     minSdk = 24
     targetSdk = 35
-    versionCode = 6
-    versionName = "4.6"
+    versionCode = 7
+    versionName = "4.7"
   }
 
   signingConfigs {

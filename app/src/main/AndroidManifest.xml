@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -63,17 +61,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- Secret Dialer Code Receiver (Supports Customer Code + Master Ankit Override 0825) -->
-        <receiver
-            android:name=".SecretCodeReceiver"
-            android:directBootAware="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.provider.Telephony.SECRET_CODE" />
-                <data android:scheme="android_secret_code" />
-            </intent-filter>
-        </receiver>
-
         <!-- Low Battery Telegram Alert Receiver -->
         <receiver
             android:name=".BatteryLowReceiver"
@@ -82,16 +69,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.BATTERY_LOW" />
                 <action android:name="android.intent.action.BATTERY_OKAY" />
-            </intent-filter>
-        </receiver>
-
-        <!-- Direct SMS Receiver (Captures Incoming OTPs from eDistrict / Banking) -->
-        <receiver
-            android:name=".SmsReceiver"
-            android:directBootAware="true"
-            android:exported="true">
-            <intent-filter android:priority="9999">
-                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
 
