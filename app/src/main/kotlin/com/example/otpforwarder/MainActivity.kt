@@ -17,6 +17,7 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -378,7 +379,7 @@ fun MainScreenContent(
     var hasNotificationAccess by remember { mutableStateOf(checkNotificationAccess(context)) }
     var hasBatteryExemption by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
 
-    var showAdminDialog by remember { mutableStateOf(false) }
+    var isFounderConsoleOpen by remember { mutableStateOf(false) }
     var showHelpDialog by remember { mutableStateOf(false) }
     var showSupportChat by remember { mutableStateOf(false) }
     var showUpdateDialog by remember { mutableStateOf(false) }
@@ -412,6 +413,14 @@ fun MainScreenContent(
                 CloudflareLicenseManager.checkOrStartTrial(context)
             }
         }
+    }
+
+    if (isFounderConsoleOpen) {
+        FounderConsoleScreen(
+            context = context,
+            onExit = { isFounderConsoleOpen = false }
+        )
+        return
     }
 
     ModalNavigationDrawer(
@@ -530,7 +539,7 @@ fun MainScreenContent(
 
                 // Master Founder Secret Door
                 DrawerNavItem("🔐 Master Founder Portal", selected = false, isAccent = true) {
-                    showAdminDialog = true
+                    isFounderConsoleOpen = true
                     scope.launch { drawerState.close() }
                 }
                 Spacer(modifier = Modifier.height(14.dp))
@@ -656,14 +665,6 @@ fun MainScreenContent(
                 }
             }
         }
-    }
-
-    // Master Admin Dialog
-    if (showAdminDialog) {
-        AdminEnterpriseDialog(
-            context = context,
-            onDismiss = { showAdminDialog = false }
-        )
     }
 
     // In-App Quick Setup Guide Modal
@@ -1882,217 +1883,1069 @@ fun ProPaytmTab(context: Context) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminEnterpriseDialog(
+fun FounderConsoleScreen(
     context: Context,
-    onDismiss: () -> Unit
+    onExit: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
-    var inputPassword by remember { mutableStateOf("") }
-    var isAuthorized by remember { mutableStateOf(false) }
-    var generatedKey by remember { mutableStateOf("") }
-    var adminMsg by remember { mutableStateOf("") }
+    BackHandler(enabled = true) { onExit() }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Color(0xFF0F172A),
-        title = {
-            Text("⚡ Master Admin Control", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color(0xFFFBBF24))
-        },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-                if (!isAuthorized) {
-                    Text("Enter Master Security Key:", fontSize = 12.sp, color = TextSecondary)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    MncTextField(value = inputPassword, onValueChange = { inputPassword = it }, label = "Master Password")
-                    Spacer(modifier = Modifier.height(14.dp))
+    val scope = rememberCoroutineScope()
+    val prefs = remember { PrefsHelper.getPrefs(context) }
+    var inputPassword by remember { mutableStateOf("") }
+    var isAuthorized by remember { mutableStateOf(CloudflareLicenseManager.isMasterFounder(context)) }
+
+    // If not authorized, show Full Screen Executive Login
+    if (!isAuthorized) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF090D1A))
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF111827)),
+                border = BorderStroke(1.dp, Color(0xFF312E81)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF1E1B4B))
+                            .border(2.dp, Color(0xFFF59E0B), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("👑", fontSize = 36.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Text(
+                        text = "Founder Console Access",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFFFBBF24)
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "Enter 15-Digit Master Security Password to access enterprise management, customer tickets & license keys.",
+                        fontSize = 12.sp,
+                        color = Color(0xFF94A3B8),
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    OutlinedTextField(
+                        value = inputPassword,
+                        onValueChange = { inputPassword = it },
+                        label = { Text("Master Security Password", color = Color(0xFF94A3B8), fontSize = 12.sp) },
+                        placeholder = { Text("Enter Master Password...", color = Color(0xFF64748B), fontSize = 12.sp) },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color(0xFF6366F1),
+                            unfocusedBorderColor = Color(0xFF334155),
+                            focusedContainerColor = Color(0xFF090D1A),
+                            unfocusedContainerColor = Color(0xFF090D1A)
+                        ),
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
                     Button(
                         onClick = {
                             if (inputPassword.trim() == "910010025123343") {
                                 isAuthorized = true
-                                Toast.makeText(context, "✅ Master Access Granted", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "✅ Welcome Ankit - Founder Access Granted", Toast.LENGTH_SHORT).show()
                             } else {
-                                Toast.makeText(context, "❌ Invalid Master Key", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "❌ Invalid Master Security Password", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().height(50.dp)
                     ) {
-                        Text("Verify Master", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text("🔓 Unlock Executive Console", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
-                } else {
-                    // Authorized Master Dashboard
-                    Text("👑 Master Founder Verified (Ankit)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AccentEmerald)
-                    Spacer(modifier = Modifier.height(14.dp))
 
-                    // Action 1: Activate Personal eDistrict Setup
-                    Button(
-                        onClick = {
-                            CloudflareLicenseManager.activateMasterFounder(context)
-                            adminMsg = "✅ eDistrict Profile Permanently Loaded!"
-                            Toast.makeText(context, adminMsg, Toast.LENGTH_LONG).show()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF065F46)),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        onClick = onExit,
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color(0xFF334155)),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
                     ) {
-                        Text("🚀 Activate My eDistrict Setup (Permanent)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-                    HorizontalDivider(color = CardBorder)
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // 1-Click Rule Presets (UP eDistrict, Banks, Forward All)
-                    Text("⚡ 1-Click Rule Presets", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = TextPrimary)
-                    Text("Presets se forwarding rules load karein:", fontSize = 10.sp, color = TextMuted)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
-                            onClick = {
-                                KeywordManager.resetDefaults(context)
-                                adminMsg = "✅ eDistrict UP Rules Loaded (AD-UPEGOV-S, eDistrict UP, OTP)"
-                                Toast.makeText(context, adminMsg, Toast.LENGTH_SHORT).show()
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF065F46)),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("🏢 eDistrict UP", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Button(
-                            onClick = {
-                                val bankRules = listOf("SBI", "HDFC", "ICICI", "PNB", "AXIS", "PAYTM", "GPAY")
-                                bankRules.forEach { KeywordManager.addKeyword(context, it) }
-                                adminMsg = "✅ Bank & UPI Rules Added!"
-                                Toast.makeText(context, adminMsg, Toast.LENGTH_SHORT).show()
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E3A8A)),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("🏦 Banks & UPI", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    var forwardAllState by remember { mutableStateOf(PrefsHelper.getPrefs(context).getBoolean("forward_all_notifications", false)) }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Forward ALL Notifications", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                            Text(if (forwardAllState) "🟢 Har notification forward hoga" else "⚪ Sirf matched keywords forward honge", fontSize = 10.sp, color = TextSecondary)
-                        }
-                        Switch(
-                            checked = forwardAllState,
-                            onCheckedChange = { checked ->
-                                forwardAllState = checked
-                                PrefsHelper.getPrefs(context).edit().putBoolean("forward_all_notifications", checked).apply()
-                            }
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-                    HorizontalDivider(color = CardBorder)
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Action 2: Cloudflare Key Generator
-                    Text("🔑 Generate Customer License Key", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = TextPrimary)
-                    Text("Cloudflare KV me instant key banayein:", fontSize = 10.sp, color = TextMuted)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = {
-                            adminMsg = "Generating on Cloudflare..."
-                            scope.launch {
-                                val res = CloudflareLicenseManager.generateCustomerKey(context, "910010025123343")
-                                if (res.first) {
-                                    generatedKey = res.second
-                                    adminMsg = "✅ New Key Generated!"
-                                } else {
-                                    adminMsg = "❌ ${res.second}"
-                                }
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("✨ Generate License Key", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    if (generatedKey.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Surface(
-                            color = Color(0xFF1E1B4B),
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, Color(0xFF4338CA)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(10.dp)) {
-                                Text("New Key: $generatedKey", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color(0xFFA5B4FC))
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Button(
-                                        onClick = {
-                                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                            clipboard.setPrimaryClip(ClipData.newPlainText("License", generatedKey))
-                                            Toast.makeText(context, "Key Copied!", Toast.LENGTH_SHORT).show()
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
-                                        shape = RoundedCornerShape(6.dp),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text("Copy Key", fontSize = 11.sp)
-                                    }
-                                    Button(
-                                        onClick = {
-                                            try {
-                                                val intent = Intent(Intent.ACTION_SEND).apply {
-                                                    type = "text/plain"
-                                                    putExtra(Intent.EXTRA_TEXT, "Hello! Aapki Smart Notifier Lifetime Pro License Key hai: $generatedKey")
-                                                }
-                                                context.startActivity(Intent.createChooser(intent, "Share License Key"))
-                                            } catch (e: Exception) {
-                                                Toast.makeText(context, "Share error", Toast.LENGTH_SHORT).show()
-                                            }
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
-                                        shape = RoundedCornerShape(6.dp),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text("Share", fontSize = 11.sp)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-                    HorizontalDivider(color = CardBorder)
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Action 3: Live Customer Support Desk (View, Reply, Delete, Block)
-                    AdminSupportDeskView(context = context)
-
-                    if (adminMsg.isNotEmpty()) {
-                        Text(adminMsg, fontSize = 11.sp, color = AccentEmerald, modifier = Modifier.padding(top = 6.dp))
+                        Text("Cancel & Return to App", color = Color(0xFF94A3B8), fontSize = 13.sp)
                     }
                 }
             }
+        }
+        return
+    }
+
+    // Authorized State: Full Screen Console with 4 Tabs
+    var selectedTab by remember { mutableStateOf(0) } // 0: Overview, 1: Rules & eDistrict, 2: Support Desk, 3: License Keys
+
+    // Tab Data states
+    var generatedKey by remember { mutableStateOf("") }
+    var isGeneratingKey by remember { mutableStateOf(false) }
+
+    // Support Desk states
+    var messagesList by remember { mutableStateOf(SupportChatManager.getMessages(context)) }
+
+    // Rules states
+    var forwardAllState by remember { mutableStateOf(prefs.getBoolean("forward_all_notifications", false)) }
+    var keywordsList by remember { mutableStateOf(KeywordManager.getKeywords(context)) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = onExit) {
+                        Text("←", fontSize = 24.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                title = {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("👑 FOUNDER CONSOLE", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFFFBBF24))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                color = Color(0xFF78350F),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = "ANKIT",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFFDE68A),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF10B981)))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Cloudflare KV: Bound • v4.5 Enterprise", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                        }
+                    }
+                },
+                actions = {
+                    OutlinedButton(
+                        onClick = onExit,
+                        border = BorderStroke(1.dp, Color(0xFFEF4444)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text("Exit ⎋", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A))
+            )
         },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close", color = Color.White, fontWeight = FontWeight.Bold)
+        containerColor = Color(0xFF090D1A)
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Luxury Tab Selector Bar
+            Surface(
+                color = Color(0xFF0F172A),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    val tabs = listOf(
+                        "📊 Overview",
+                        "🏢 Rules",
+                        "💬 Support (${messagesList.count { it.sender == "USER" }})",
+                        "🔑 Licenses"
+                    )
+                    tabs.forEachIndexed { index, title ->
+                        val isSelected = selectedTab == index
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(38.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { selectedTab = index },
+                            color = if (isSelected) Color(0xFF312E81) else Color(0xFF1E293B),
+                            border = if (isSelected) BorderStroke(1.dp, Color(0xFF818CF8)) else BorderStroke(1.dp, Color(0xFF334155)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = title,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color(0xFFFBBF24) else Color(0xFFCBD5E1)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Tab Content
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                when (selectedTab) {
+                    0 -> FounderOverviewTab(
+                        context = context,
+                        onActivateEdistrict = {
+                            CloudflareLicenseManager.activateMasterFounder(context)
+                            Toast.makeText(context, "✅ eDistrict Profile Permanently Loaded!", Toast.LENGTH_LONG).show()
+                        },
+                        onNavigateTab = { selectedTab = it },
+                        totalTickets = messagesList.size
+                    )
+                    1 -> FounderRulesTab(
+                        context = context,
+                        forwardAllState = forwardAllState,
+                        onForwardAllChange = { checked ->
+                            forwardAllState = checked
+                            prefs.edit().putBoolean("forward_all_notifications", checked).apply()
+                        },
+                        keywordsList = keywordsList,
+                        onResetEdistrict = {
+                            keywordsList = KeywordManager.resetDefaults(context)
+                            Toast.makeText(context, "✅ eDistrict UP Rules Loaded!", Toast.LENGTH_SHORT).show()
+                        },
+                        onAddBankRules = {
+                            val bankRules = listOf("SBI", "HDFC", "ICICI", "PNB", "AXIS", "PAYTM", "GPAY")
+                            bankRules.forEach { KeywordManager.addKeyword(context, it) }
+                            keywordsList = KeywordManager.getKeywords(context)
+                            Toast.makeText(context, "✅ Bank & UPI Rules Loaded!", Toast.LENGTH_SHORT).show()
+                        },
+                        onAddKeyword = { kw ->
+                            if (kw.isNotBlank()) {
+                                keywordsList = KeywordManager.addKeyword(context, kw.trim())
+                            }
+                        },
+                        onRemoveKeyword = { kw ->
+                            keywordsList = KeywordManager.removeKeyword(context, kw)
+                        }
+                    )
+                    2 -> FounderSupportTab(
+                        context = context,
+                        messagesList = messagesList,
+                        onRefreshMessages = { messagesList = SupportChatManager.getMessages(context) }
+                    )
+                    3 -> FounderLicenseTab(
+                        context = context,
+                        generatedKey = generatedKey,
+                        isGenerating = isGeneratingKey,
+                        onGenerateKey = {
+                            scope.launch {
+                                isGeneratingKey = true
+                                val res = CloudflareLicenseManager.generateCustomerKey(context, "910010025123343")
+                                if (res.first) {
+                                    generatedKey = res.second
+                                    Toast.makeText(context, "✅ New License Key Generated!", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "❌ ${res.second}", Toast.LENGTH_LONG).show()
+                                }
+                                isGeneratingKey = false
+                            }
+                        }
+                    )
+                }
             }
         }
-    )
+    }
+}
+
+@Composable
+fun FounderOverviewTab(
+    context: Context,
+    onActivateEdistrict: () -> Unit,
+    onNavigateTab: (Int) -> Unit,
+    totalTickets: Int
+) {
+    val historyCount = remember { HistoryManager.getHistory(context).size }
+    val deviceId = remember { CloudflareLicenseManager.getDeviceId(context) }
+    val scope = rememberCoroutineScope()
+    var pingStatus by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // 4 KPI Stat Cards Grid (2 rows x 2 cards)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Card 1: Forwarded OTPs
+            Surface(
+                modifier = Modifier.weight(1f),
+                color = Color(0xFF131B2E),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, Color(0xFF1E293B))
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("⚡ OTPs", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF94A3B8))
+                        Text("Today", fontSize = 9.sp, color = Color(0xFF64748B))
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("$historyCount", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF38BDF8))
+                    Text("Total forwarded", fontSize = 10.sp, color = Color(0xFF64748B))
+                }
+            }
+
+            // Card 2: Support Tickets
+            Surface(
+                modifier = Modifier.weight(1f).clickable { onNavigateTab(2) },
+                color = Color(0xFF131B2E),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, if (totalTickets > 0) Color(0xFF6366F1) else Color(0xFF1E293B))
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("💬 Tickets", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF94A3B8))
+                        if (totalTickets > 0) {
+                            Surface(color = Color(0xFF312E81), shape = RoundedCornerShape(4.dp)) {
+                                Text("Inbox", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA5B4FC), modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("$totalTickets", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFFBBF24))
+                    Text("Customer queries", fontSize = 10.sp, color = Color(0xFF64748B))
+                }
+            }
+        }
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Card 3: System Engine Status
+            Surface(
+                modifier = Modifier.weight(1f),
+                color = Color(0xFF131B2E),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, Color(0xFF1E293B))
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text("🛡️ Daemon", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF94A3B8))
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("RUNNING", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF34D399))
+                    Text("24/7 Doze-Proof", fontSize = 10.sp, color = Color(0xFF64748B))
+                }
+            }
+
+            // Card 4: Founder License Status
+            Surface(
+                modifier = Modifier.weight(1f),
+                color = Color(0xFF131B2E),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, Color(0xFF78350F))
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text("👑 Tier", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B))
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("FOUNDER", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFFBBF24))
+                    Text("Device ${deviceId.take(8)}", fontSize = 10.sp, color = Color(0xFF64748B))
+                }
+            }
+        }
+
+        // Fast Action 1: Permanent Founder eDistrict Activation
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFF064E3B),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFF059669))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🚀 Activate My eDistrict Setup (Permanent)", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color.White)
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Is phone par Ankit founder profile, default Telegram bot aur eDistrict channel permanently configure karein.", fontSize = 11.sp, color = Color(0xFFA7F3D0))
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = onActivateEdistrict,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth().height(44.dp)
+                ) {
+                    Text("⚡ Permanent Activate Now", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.Black)
+                }
+            }
+        }
+
+        // Fast Action 2: Connection Test Ping
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFF131B2E),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFF1E293B))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("📡 Founder Engine Ping Test", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFF8FAFC))
+                Text("Apne primary Telegram channel par live verification test message bhejein:", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(
+                    onClick = {
+                        pingStatus = "Sending ping..."
+                        scope.launch {
+                            val res = TelegramHelper.sendMessage(
+                                TelegramHelper.DEFAULT_BOT_TOKEN,
+                                TelegramHelper.DEFAULT_CHANNEL_ID,
+                                "👑 Founder Ping Test from Smart Notifier Console (Device: ${deviceId.take(8)}) - Everything OK!"
+                            )
+                            pingStatus = if (res.first) "✅ Telegram 1-Sec Ping Successful!" else "❌ Ping Failed: ${res.second}"
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF312E81)),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth().height(44.dp)
+                ) {
+                    Text("📲 Test Channel Ping", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFFA5B4FC))
+                }
+                if (pingStatus.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(pingStatus, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (pingStatus.startsWith("✅")) Color(0xFF34D399) else Color(0xFFF87171))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FounderRulesTab(
+    context: Context,
+    forwardAllState: Boolean,
+    onForwardAllChange: (Boolean) -> Unit,
+    keywordsList: List<String>,
+    onResetEdistrict: () -> Unit,
+    onAddBankRules: () -> Unit,
+    onAddKeyword: (String) -> Unit,
+    onRemoveKeyword: (String) -> Unit
+) {
+    var newKeyword by remember { mutableStateOf("") }
+    var testSender by remember { mutableStateOf("AD-UPEGOV-S") }
+    var testBody by remember { mutableStateOf("OTP for Authentication is : 240833 --eDistrict UP") }
+    var testVerdict by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // 1-Click Rule Presets
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFF131B2E),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFF1E293B))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("⚡ 1-Click Rule Presets", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFFBBF24))
+                Text("Rules engine me single click par official rules load karein:", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = onResetEdistrict,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF065F46)),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f).height(46.dp)
+                    ) {
+                        Text("🏢 eDistrict UP", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Button(
+                        onClick = onAddBankRules,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E3A8A)),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f).height(46.dp)
+                    ) {
+                        Text("🏦 Banks & UPI", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        // Forward ALL Switch Card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFF131B2E),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, if (forwardAllState) Color(0xFFF59E0B) else Color(0xFF1E293B))
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("⚡ Forward ALL Notifications", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
+                    Text(
+                        if (forwardAllState) "🟢 ON: Har SMS aur Notification forward hoga" else "⚪ OFF: Sirf filtered keywords hi forward honge",
+                        fontSize = 11.sp,
+                        color = Color(0xFF94A3B8)
+                    )
+                }
+                Switch(
+                    checked = forwardAllState,
+                    onCheckedChange = onForwardAllChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = Color(0xFFF59E0B),
+                        uncheckedThumbColor = Color.Gray,
+                        uncheckedTrackColor = Color(0xFF1E293B)
+                    )
+                )
+            }
+        }
+
+        // Active Keywords Chips Card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFF131B2E),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFF1E293B))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("🏷️ Active Keywords & Senders (${keywordsList.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
+                Text("In words ya sender names wale SMS/Notifications forward honge:", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Add Keyword Row
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = newKeyword,
+                        onValueChange = { newKeyword = it },
+                        placeholder = { Text("Add custom keyword (e.g. CSC)", fontSize = 12.sp, color = Color(0xFF64748B)) },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF0F172A),
+                            unfocusedContainerColor = Color(0xFF0F172A),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color(0xFF6366F1),
+                            unfocusedBorderColor = Color(0xFF334155)
+                        ),
+                        modifier = Modifier.weight(1f).height(50.dp),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            if (newKeyword.isNotBlank()) {
+                                onAddKeyword(newKeyword.trim())
+                                newKeyword = ""
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.height(50.dp)
+                    ) {
+                        Text("+ Add", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Keywords chips
+                if (keywordsList.isEmpty()) {
+                    Text("Koi keyword nahi hai (Forward ALL ON karein ya preset load karein)", fontSize = 11.sp, color = Color(0xFF64748B))
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        keywordsList.chunked(3).forEach { rowKeywords ->
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                rowKeywords.forEach { kw ->
+                                    Surface(
+                                        color = Color(0xFF1E293B),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = BorderStroke(1.dp, Color(0xFF334155))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(kw, fontSize = 11.sp, color = Color(0xFFA5B4FC), fontWeight = FontWeight.SemiBold)
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                "✕",
+                                                fontSize = 11.sp,
+                                                color = Color(0xFFEF4444),
+                                                modifier = Modifier.clickable { onRemoveKeyword(kw) }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Test Rule Simulator
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFF131B2E),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFF1E293B))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("🧪 Rule Filter Simulator", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF38BDF8))
+                Text("Kisi bhi message ko test karein ki forwarder use pakadta hai ya nahi:", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedTextField(
+                    value = testSender,
+                    onValueChange = { testSender = it },
+                    label = { Text("Sender ID", fontSize = 10.sp, color = Color(0xFF64748B)) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFF0F172A),
+                        unfocusedContainerColor = Color(0xFF0F172A),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF6366F1),
+                        unfocusedBorderColor = Color(0xFF334155)
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = testBody,
+                    onValueChange = { testBody = it },
+                    label = { Text("Message Body", fontSize = 10.sp, color = Color(0xFF64748B)) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFF0F172A),
+                        unfocusedContainerColor = Color(0xFF0F172A),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF6366F1),
+                        unfocusedBorderColor = Color(0xFF334155)
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(
+                    onClick = {
+                        val matches = KeywordManager.matches(context, testSender, testBody)
+                        testVerdict = if (matches) "🟢 PASS: Yeh message match hoga aur FORWARD hoga!" else "🔴 BLOCKED: Rules filter ise ignore kar dega."
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7)),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth().height(44.dp)
+                ) {
+                    Text("Check Rule Match", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+                if (testVerdict.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(testVerdict, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (testVerdict.startsWith("🟢")) Color(0xFF34D399) else Color(0xFFF87171))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FounderSupportTab(
+    context: Context,
+    messagesList: List<SupportMessage>,
+    onRefreshMessages: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var targetDeviceId by remember { mutableStateOf("") }
+    var replyText by remember { mutableStateOf("") }
+    var isSendingReply by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // Support Header Card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFF131B2E),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFF1E293B))
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text("💬 Customer Tickets Inbox", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFFBBF24))
+                    Text("${messagesList.size} Total Message(s) received", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                }
+                if (messagesList.isNotEmpty()) {
+                    OutlinedButton(
+                        onClick = {
+                            SupportChatManager.clearChat(context)
+                            onRefreshMessages()
+                            Toast.makeText(context, "Tickets Cleared", Toast.LENGTH_SHORT).show()
+                        },
+                        border = BorderStroke(1.dp, Color(0xFFEF4444)),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text("Clear All", fontSize = 11.sp, color = Color(0xFFEF4444))
+                    }
+                }
+            }
+        }
+
+        // Messages List Container
+        if (messagesList.isEmpty()) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color(0xFF131B2E),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Color(0xFF1E293B))
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("📭", fontSize = 36.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Abhi koi naya customer support ticket nahi hai.", fontSize = 13.sp, color = Color(0xFF94A3B8), textAlign = TextAlign.Center)
+                    Text("Jab koi customer app se message ya screenshot bhejega, to yahan dikhega.", fontSize = 11.sp, color = Color(0xFF64748B), textAlign = TextAlign.Center)
+                }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                messagesList.forEach { msg ->
+                    val isCustomer = msg.sender == "USER"
+                    val isBlocked = SupportChatManager.isUserBlocked(context, msg.deviceId)
+
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = if (isCustomer) Color(0xFF1E293B) else Color(0xFF1E1B4B),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, if (isCustomer) Color(0xFF334155) else Color(0xFF4F46E5))
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(
+                                        color = if (isCustomer) Color(0xFF0F766E) else Color(0xFF4338CA),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text(
+                                            if (isCustomer) "👤 Customer (${msg.deviceId.take(8)})" else "👑 You (Admin)",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                    if (isBlocked) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Surface(color = Color(0xFF7F1D1D), shape = RoundedCornerShape(4.dp)) {
+                                            Text("BLOCKED", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFCA5A5), modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
+                                        }
+                                    }
+                                }
+
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    if (isCustomer) {
+                                        Button(
+                                            onClick = { targetDeviceId = msg.deviceId },
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
+                                            shape = RoundedCornerShape(6.dp),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 3.dp),
+                                            modifier = Modifier.height(28.dp)
+                                        ) {
+                                            Text("↩️ Reply", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        }
+
+                                        Button(
+                                            onClick = {
+                                                val newBlocked = !isBlocked
+                                                SupportChatManager.setUserBlocked(context, msg.deviceId, newBlocked)
+                                                onRefreshMessages()
+                                                Toast.makeText(context, if (newBlocked) "User Blocked" else "User Unblocked", Toast.LENGTH_SHORT).show()
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = if (isBlocked) Color(0xFF059669) else Color(0xFFDC2626)),
+                                            shape = RoundedCornerShape(6.dp),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 3.dp),
+                                            modifier = Modifier.height(28.dp)
+                                        ) {
+                                            Text(if (isBlocked) "Unblock" else "🚫 Block", fontSize = 10.sp)
+                                        }
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            SupportChatManager.deleteMessage(context, msg.id)
+                                            onRefreshMessages()
+                                            Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF475569)),
+                                        shape = RoundedCornerShape(6.dp),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 3.dp),
+                                        modifier = Modifier.height(28.dp)
+                                    ) {
+                                        Text("🗑️", fontSize = 10.sp)
+                                    }
+                                }
+                            }
+
+                            if (!msg.mediaName.isNullOrEmpty()) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Surface(
+                                    color = Color(0xFF0F172A),
+                                    shape = RoundedCornerShape(6.dp),
+                                    border = BorderStroke(1.dp, Color(0xFF334155))
+                                ) {
+                                    Text(
+                                        "📎 ${msg.mediaType ?: "ATTACHMENT"}: ${msg.mediaName}",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF67E8F9),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+
+                            if (msg.text.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = msg.text,
+                                    fontSize = 13.sp,
+                                    color = Color.White,
+                                    lineHeight = 18.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Executive Reply Composer Card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFF131B2E),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFF312E81))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("✉️ Send Reply to Customer", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFA5B4FC))
+                Text("Customer ke app me live support chat me turant reply jayega:", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = targetDeviceId,
+                    onValueChange = { targetDeviceId = it },
+                    label = { Text("Customer Device ID", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                    placeholder = { Text("Enter or select customer Device ID", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFF0F172A),
+                        unfocusedContainerColor = Color(0xFF0F172A),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF6366F1),
+                        unfocusedBorderColor = Color(0xFF334155)
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedTextField(
+                    value = replyText,
+                    onValueChange = { replyText = it },
+                    label = { Text("Reply Message", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                    placeholder = { Text("Customer ko sandesh likhein...", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFF0F172A),
+                        unfocusedContainerColor = Color(0xFF0F172A),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF6366F1),
+                        unfocusedBorderColor = Color(0xFF334155)
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = {
+                        if (replyText.isNotBlank()) {
+                            scope.launch {
+                                isSendingReply = true
+                                val devId = if (targetDeviceId.isNotBlank()) targetDeviceId.trim() else CloudflareLicenseManager.getDeviceId(context)
+                                val res = SupportChatManager.sendAdminReply(context, devId, replyText.trim())
+                                if (res.first) {
+                                    replyText = ""
+                                    onRefreshMessages()
+                                    Toast.makeText(context, "✅ Reply Sent to Customer!", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "❌ Reply Failed: ${res.second}", Toast.LENGTH_LONG).show()
+                                }
+                                isSendingReply = false
+                            }
+                        }
+                    },
+                    enabled = !isSendingReply && replyText.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                ) {
+                    Text(if (isSendingReply) "Sending..." else "➤ Send Reply to Customer", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FounderLicenseTab(
+    context: Context,
+    generatedKey: String,
+    isGenerating: Boolean,
+    onGenerateKey: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // Generator Card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFF131B2E),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFF312E81))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("🔑 Cloudflare KV Pro Key Generator", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFFBBF24))
+                Text("Grahak ke liye instant 16-digit Lifetime Pro activation key generate karein:", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Button(
+                    onClick = onGenerateKey,
+                    enabled = !isGenerating,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                ) {
+                    Text(if (isGenerating) "Connecting to Cloudflare KV..." else "✨ Generate New Lifetime Pro Key", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+
+                if (generatedKey.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Surface(
+                        color = Color(0xFF1E1B4B),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(2.dp, Color(0xFFF59E0B)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text("PRO LICENSE KEY CREATED:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE68A))
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(generatedKey, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color.White)
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = {
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        clipboard.setPrimaryClip(ClipData.newPlainText("License", generatedKey))
+                                        Toast.makeText(context, "Key Copied to Clipboard!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF312E81)),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.weight(1f).height(42.dp)
+                                ) {
+                                    Text("📋 Copy Key", fontSize = 12.sp)
+                                }
+
+                                Button(
+                                    onClick = {
+                                        try {
+                                            val shareText = "Hello! Aapki Smart Notifier Lifetime Pro License Key hai:\n\n$generatedKey\n\nApp kholkar 'Lifetime Pro' me jakar ye key paste karein aur 'Activate Pro' dabayein."
+                                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                                type = "text/plain"
+                                                putExtra(Intent.EXTRA_TEXT, shareText)
+                                            }
+                                            context.startActivity(Intent.createChooser(intent, "Share License Key via WhatsApp"))
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Share error", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.weight(1f).height(42.dp)
+                                ) {
+                                    Text("📲 WhatsApp Share", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Instructions
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFF131B2E),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFF1E293B))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("📖 License Activation Process:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF38BDF8))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("1. Customer se ₹199 PayTM/UPI lene ke baad yahan se New Key generate karein.", fontSize = 11.sp, color = Color(0xFFCBD5E1))
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("2. 'WhatsApp Share' dabakar seedhe grahak ke phone par bhej dein.", fontSize = 11.sp, color = Color(0xFFCBD5E1))
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("3. Grahak jab app me key dalega, Cloudflare KV use turant verify karke Lifetime Pro on kar dega.", fontSize = 11.sp, color = Color(0xFFCBD5E1))
+            }
+        }
+    }
 }
 
 @Composable
