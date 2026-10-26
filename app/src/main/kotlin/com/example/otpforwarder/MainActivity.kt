@@ -814,6 +814,61 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
             }
         }
 
+        // 6. Secret In-App Update Card (Rasta 2)
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "🔄 Secret In-App Update (GitHub)",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = Color(0xFF0D47A1)
+                )
+                Text(
+                    text = "Bahar screen par bina koi nishaan ya pop-up chhode, aap akele me yahan se direct update install kar sakte hain:",
+                    fontSize = 11.sp,
+                    color = Color.DarkGray,
+                    modifier = Modifier.padding(top = 2.dp, bottom = 10.dp)
+                )
+
+                var updateProgressText by remember { mutableStateOf("") }
+                var isUpdating by remember { mutableStateOf(false) }
+
+                Button(
+                    onClick = {
+                        isUpdating = true
+                        updateProgressText = "Connecting to GitHub..."
+                        scope.launch {
+                            val res = AppUpdater.downloadAndInstall(context) { progress ->
+                                updateProgressText = progress
+                            }
+                            if (!res.first) {
+                                updateProgressText = "❌ ${res.second}"
+                            }
+                            isUpdating = false
+                        }
+                    },
+                    enabled = !isUpdating,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1565C0)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (isUpdating) updateProgressText else "🚀 Check & Install Update Now")
+                }
+
+                if (updateProgressText.isNotEmpty() && !isUpdating) {
+                    Text(
+                        text = updateProgressText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (updateProgressText.startsWith("❌")) Color(0xFFC62828) else Color(0xFF1565C0),
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                }
+            }
+        }
+
         // Save All Settings Button
         Button(
             onClick = {
