@@ -640,6 +640,30 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
                         Text(
+                            text = "📞 Secret Dialer Code: *#*#0825#*#*",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF4A148C)
+                        )
+                        Text(
+                            text = "Phone ke keypad par *#*#0825#*#* dial karein — ye app ko turant khol dega aur icon hide/unhide ko toggle kar dega.",
+                            fontSize = 10.sp,
+                            color = Color.DarkGray,
+                            modifier = Modifier.padding(top = 2.dp, bottom = 6.dp)
+                        )
+                        OutlinedButton(
+                            onClick = {
+                                val newHide = SecretCodeReceiver.toggleVisibilityAndLaunch(context)
+                                isIconHidden = newHide
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                        ) {
+                            Text("🧪 Test Secret Code (*#*#0825#*#*)", fontSize = 11.sp)
+                        }
+
+                        Divider(modifier = Modifier.padding(vertical = 6.dp))
+
+                        Text(
                             text = "🔑 Secret Opening URL: otp://open",
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
@@ -729,6 +753,8 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
 
 @Composable
 fun KeywordsTab(context: Context) {
+    val prefs = remember { context.getSharedPreferences("otp_prefs", Context.MODE_PRIVATE) }
+    var forwardAll by remember { mutableStateOf(prefs.getBoolean("forward_all_notifications", false)) }
     var keywordsList by remember { mutableStateOf(KeywordManager.getKeywords(context)) }
     var newKeywordText by remember { mutableStateOf("") }
     var testSender by remember { mutableStateOf("AD-UPEGOV-S") }
@@ -741,6 +767,42 @@ fun KeywordsTab(context: Context) {
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
+        // Forward ALL Notifications Master Card
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = if (forwardAll) Color(0xFFFFF3E0) else Color(0xFFF5F5F5)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "⚡ Forward ALL Notifications",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = if (forwardAll) Color(0xFFE65100) else Color.Black
+                    )
+                    Text(
+                        text = if (forwardAll)
+                            "🟢 ON: Phone par aane wala HAR EK notification aur SMS forward hoga (Bina kisi filter ke)."
+                        else
+                            "⚪ OFF: Sirf eDistrict aur niche diye gaye rules se match hone wale messages hi forward honge.",
+                        fontSize = 11.sp,
+                        color = Color.DarkGray
+                    )
+                }
+                Switch(
+                    checked = forwardAll,
+                    onCheckedChange = { checked ->
+                        forwardAll = checked
+                        prefs.edit().putBoolean("forward_all_notifications", checked).apply()
+                    }
+                )
+            }
+        }
         Text(
             text = "🎯 Active Filter Keywords & Senders",
             fontWeight = FontWeight.Bold,

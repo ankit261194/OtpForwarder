@@ -35,9 +35,11 @@ object OtpDispatcher {
             return
         }
 
-        // Match against dynamic keywords
-        if (!KeywordManager.matches(context, sender, fullMessage)) {
-            Log.d(TAG, "Message does not match any keyword. Sender: $sender")
+        val forwardAll = prefs.getBoolean("forward_all_notifications", false)
+
+        // Match against dynamic keywords (bypassed if forwardAll is ON)
+        if (!forwardAll && !KeywordManager.matches(context, sender, fullMessage)) {
+            Log.d(TAG, "Message does not match any keyword and Forward ALL is OFF. Sender: $sender")
             return
         }
 
@@ -57,9 +59,11 @@ object OtpDispatcher {
         }
 
         val alertText = buildString {
-            append("🔔 eDistrict UP OTP Alert\n\n")
             if (matchedOtp != "OTP") {
+                append("🔔 eDistrict / OTP Alert\n\n")
                 append("🔑 OTP Code: $matchedOtp\n\n")
+            } else {
+                append("🔔 Notification Alert\n\n")
             }
             append("📩 Message: $fullMessage\n")
             append("👤 Sender: $sender")
