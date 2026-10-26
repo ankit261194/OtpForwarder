@@ -13,6 +13,7 @@ data class OtpHistoryItem(
     val otp: String,
     val fullMessage: String,
     val telegramStatus: String, // e.g. "Sent", "Failed", "Disabled"
+    val telegram2Status: String = "Disabled",
     val whatsappStatus: String,
     val smsStatus: String
 )
@@ -28,6 +29,7 @@ object HistoryManager {
         otp: String,
         fullMessage: String,
         telegramStatus: String,
+        telegram2Status: String,
         whatsappStatus: String,
         smsStatus: String
     ) {
@@ -40,6 +42,7 @@ object HistoryManager {
             otp = otp,
             fullMessage = fullMessage,
             telegramStatus = telegramStatus,
+            telegram2Status = telegram2Status,
             whatsappStatus = whatsappStatus,
             smsStatus = smsStatus
         )
@@ -70,6 +73,7 @@ object HistoryManager {
                         otp = obj.optString("otp", ""),
                         fullMessage = obj.optString("fullMessage", ""),
                         telegramStatus = obj.optString("telegramStatus", "-"),
+                        telegram2Status = obj.optString("telegram2Status", "Disabled"),
                         whatsappStatus = obj.optString("whatsappStatus", "-"),
                         smsStatus = obj.optString("smsStatus", "-")
                     )
@@ -97,6 +101,7 @@ object HistoryManager {
                 put("otp", item.otp)
                 put("fullMessage", item.fullMessage)
                 put("telegramStatus", item.telegramStatus)
+                put("telegram2Status", item.telegram2Status)
                 put("whatsappStatus", item.whatsappStatus)
                 put("smsStatus", item.smsStatus)
             }
