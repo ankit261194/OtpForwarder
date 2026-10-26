@@ -377,6 +377,7 @@ fun MainScreenContent(
     var hasBatteryExemption by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
     var showAdminDialog by remember { mutableStateOf(false) }
     var showHelpDialog by remember { mutableStateOf(false) }
+    var showSupportChat by remember { mutableStateOf(false) }
 
     // Instant State Refresh when returning from OS Settings
     DisposableEffect(lifecycleOwner) {
@@ -441,6 +442,22 @@ fun MainScreenContent(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = if (CloudflareLicenseManager.isMasterFounder(context)) Color(0xFFFBBF24) else Color(0xFFA5B4FC),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            // Customer Live Support Trigger Chip
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color(0xFF064E3B),
+                                border = BorderStroke(1.dp, Color(0xFF059669)),
+                                modifier = Modifier.clickable { showSupportChat = true }
+                            ) {
+                                Text(
+                                    text = "💬 SUPPORT",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF6EE7B7),
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                 )
                             }
@@ -599,7 +616,11 @@ fun MainScreenContent(
         // Tab Body
         Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             when (selectedTab) {
-                0 -> ServicesTab(context, onOpenHelp = { showHelpDialog = true })
+                0 -> ServicesTab(
+                    context = context,
+                    onOpenHelp = { showHelpDialog = true },
+                    onOpenSupportChat = { showSupportChat = true }
+                )
                 1 -> KeywordsTab(context)
                 2 -> HistoryTab(context)
                 3 -> ProPaytmTab(context)
@@ -620,6 +641,14 @@ fun MainScreenContent(
         QuickSetupGuideDialog(
             context = context,
             onDismiss = { showHelpDialog = false }
+        )
+    }
+
+    // Live Customer Support Chat Modal
+    if (showSupportChat) {
+        SupportChatDialog(
+            context = context,
+            onDismiss = { showSupportChat = false }
         )
     }
 }
@@ -649,7 +678,8 @@ fun RowScope.NavPill(text: String, selected: Boolean, onClick: () -> Unit) {
 @Composable
 fun ServicesTab(
     context: Context,
-    onOpenHelp: () -> Unit
+    onOpenHelp: () -> Unit,
+    onOpenSupportChat: () -> Unit
 ) {
     val prefs = remember { PrefsHelper.getPrefs(context) }
     val scope = rememberCoroutineScope()
@@ -734,6 +764,30 @@ fun ServicesTab(
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text("Settings", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Live Help & Customer Support Card
+        MncCard {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("💬 Help & Live Support Desk", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFA5B4FC))
+                    Text("Direct chat karein ya photo/PDF bhejkar sahayata lein", fontSize = 11.sp, color = TextSecondary)
+                }
+                Button(
+                    onClick = onOpenSupportChat,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Text("Chat", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -1782,6 +1836,13 @@ fun AdminEnterpriseDialog(
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+                    HorizontalDivider(color = CardBorder)
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Action 3: Live Customer Support Desk (View, Reply, Delete, Block)
+                    AdminSupportDeskView(context = context)
 
                     if (adminMsg.isNotEmpty()) {
                         Text(adminMsg, fontSize = 11.sp, color = AccentEmerald, modifier = Modifier.padding(top = 6.dp))
