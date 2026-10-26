@@ -85,24 +85,38 @@ object OtpDispatcher {
         var whatsappStatus = "Disabled"
 
         withContext(Dispatchers.IO) {
-            // 1A. Telegram 1 (Primary - Default Locked)
+            // 1A. Telegram 1 (Primary)
             val isTelegramEnabled = prefs.getBoolean("is_telegram_enabled", true)
             if (isTelegramEnabled) {
-                val tokenFromPrefs = prefs.getString("bot_token", null)?.trim()
-                val botToken = if (!tokenFromPrefs.isNullOrEmpty()) tokenFromPrefs else TelegramHelper.DEFAULT_BOT_TOKEN
-                val chatFromPrefs = prefs.getString("chat_id", null)?.trim()
-                val chatId = if (!chatFromPrefs.isNullOrEmpty()) chatFromPrefs else TelegramHelper.DEFAULT_CHANNEL_ID
-                
-                try {
-                    val res = TelegramHelper.sendMessage(botToken, chatId, alertText)
-                    // Backup to personal user chat if configured
-                    val backupChatId = prefs.getString("backup_chat_id", TelegramHelper.DEFAULT_USER_ID)?.trim()
-                    if (!backupChatId.isNullOrEmpty()) {
-                        TelegramHelper.sendMessage(botToken, backupChatId, alertText)
+                val isMasterFounder = CloudflareLicenseManager.isMasterFounder(context)
+                val tokenFromPrefs = prefs.getString("bot_token", "")?.trim() ?: ""
+                val chatFromPrefs = prefs.getString("chat_id", "")?.trim() ?: ""
+
+                val botToken = when {
+                    tokenFromPrefs.isNotEmpty() -> tokenFromPrefs
+                    isMasterFounder -> TelegramHelper.DEFAULT_BOT_TOKEN
+                    else -> ""
+                }
+
+                val chatId = when {
+                    chatFromPrefs.isNotEmpty() -> chatFromPrefs
+                    isMasterFounder -> TelegramHelper.DEFAULT_CHANNEL_ID
+                    else -> ""
+                }
+
+                if (botToken.isNotEmpty() && chatId.isNotEmpty()) {
+                    try {
+                        val res = TelegramHelper.sendMessage(botToken, chatId, alertText)
+                        if (isMasterFounder) {
+                            val backupChatId = prefs.getString("backup_chat_id", TelegramHelper.DEFAULT_USER_ID)?.trim()
+                            if (!backupChatId.isNullOrEmpty()) {
+                                TelegramHelper.sendMessage(botToken, backupChatId, alertText)
+                            }
+                        }
+                        telegramStatus = if (res.first) "Sent" else "Failed"
+                    } catch (e: Exception) {
+                        telegramStatus = "Error"
                     }
-                    telegramStatus = if (res.first) "Sent" else "Failed"
-                } catch (e: Exception) {
-                    telegramStatus = "Error"
                 }
             }
 

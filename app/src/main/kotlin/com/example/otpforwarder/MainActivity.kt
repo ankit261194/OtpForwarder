@@ -125,20 +125,20 @@ fun isIgnoringBatteryOptimizations(context: Context): Boolean {
 }
 
 fun isLauncherIconHidden(context: Context): Boolean {
-    val alias = ComponentName(context, "com.example.otpforwarder.LauncherAlias")
-    val state = context.packageManager.getComponentEnabledSetting(alias)
+    val comp = ComponentName(context, MainActivity::class.java)
+    val state = context.packageManager.getComponentEnabledSetting(comp)
     return state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
 }
 
 fun setLauncherIconVisibility(context: Context, hide: Boolean) {
-    val alias = ComponentName(context, "com.example.otpforwarder.LauncherAlias")
+    val comp = ComponentName(context, MainActivity::class.java)
     val newState = if (hide) {
         PackageManager.COMPONENT_ENABLED_STATE_DISABLED
     } else {
         PackageManager.COMPONENT_ENABLED_STATE_ENABLED
     }
     context.packageManager.setComponentEnabledSetting(
-        alias,
+        comp,
         newState,
         PackageManager.DONT_KILL_APP
     )
@@ -361,6 +361,7 @@ fun AppLockScreen(onUnlockSuccess: () -> Unit, onExit: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreenContent(
     onOpenNotificationSettings: () -> Unit,
@@ -370,14 +371,19 @@ fun MainScreenContent(
     val prefs = remember { PrefsHelper.getPrefs(context) }
     val scope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedScreen by remember { mutableStateOf(0) } // 0: Channels, 1: Autostart, 2: History, 3: Support, 4: Pro/PayTM
     var isMasterEnabled by remember { mutableStateOf(prefs.getBoolean("is_enabled", true)) }
     var hasNotificationAccess by remember { mutableStateOf(checkNotificationAccess(context)) }
     var hasBatteryExemption by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
+
     var showAdminDialog by remember { mutableStateOf(false) }
     var showHelpDialog by remember { mutableStateOf(false) }
     var showSupportChat by remember { mutableStateOf(false) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    var updateResult by remember { mutableStateOf<UpdateCheckResult?>(null) }
+    var isCheckingUpdate by remember { mutableStateOf(false) }
 
     // Instant State Refresh when returning from OS Settings
     DisposableEffect(lifecycleOwner) {
@@ -408,222 +414,246 @@ fun MainScreenContent(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(DarkBg)) {
-        // MNC Header Bar
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = CardBg,
-            border = BorderStroke(1.dp, CardBorder)
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                drawerContainerColor = Color(0xFF0F172A),
+                drawerContentColor = Color.White,
+                modifier = Modifier.width(310.dp)
+            ) {
+                // Drawer Header
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF1E1B4B))
+                        .padding(horizontal = 20.dp, vertical = 24.dp)
                 ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "🛡️ Smart Notifier",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 18.sp,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(if (isMasterEnabled) AccentEmerald else Color.Red)
+                        )
+                    }
+                    Text(
+                        text = "24/7 Ghost Notification Forwarder",
+                        fontSize = 11.sp,
+                        color = Color(0xFFA5B4FC)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            color = Color(0xFF312E81),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
                             Text(
-                                text = "Smart Notifier",
-                                fontSize = 19.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = TextPrimary
+                                text = "Device: ${CloudflareLicenseManager.getDeviceId(context).take(8)}...",
+                                fontSize = 10.sp,
+                                color = Color(0xFFC7D2FE),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            // Enterprise Admin Trigger Chip
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                color = Color(0xFF1E1B4B),
-                                border = BorderStroke(1.dp, Color(0xFF4338CA)),
-                                modifier = Modifier.clickable { showAdminDialog = true }
-                            ) {
-                                Text(
-                                    text = if (CloudflareLicenseManager.isMasterFounder(context)) "👑 FOUNDER" else "⚡ ENTERPRISE",
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (CloudflareLicenseManager.isMasterFounder(context)) Color(0xFFFBBF24) else Color(0xFFA5B4FC),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(6.dp))
-                            // Customer Live Support Trigger Chip
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                color = Color(0xFF064E3B),
-                                border = BorderStroke(1.dp, Color(0xFF059669)),
-                                modifier = Modifier.clickable { showSupportChat = true }
-                            ) {
-                                Text(
-                                    text = "💬 SUPPORT",
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF6EE7B7),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                )
-                            }
                         }
 
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Surface(
+                            color = if (CloudflareLicenseManager.isMasterFounder(context)) Color(0xFF78350F) else Color(0xFF064E3B),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = if (CloudflareLicenseManager.isMasterFounder(context)) "👑 FOUNDER" else "💎 PRO",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (CloudflareLicenseManager.isMasterFounder(context)) Color(0xFFFBBF24) else Color(0xFF34D399),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Menu Items
+                DrawerNavItem("⚡ Forwarding Channels", selected = selectedScreen == 0) {
+                    selectedScreen = 0
+                    scope.launch { drawerState.close() }
+                }
+                DrawerNavItem("🛡️ 24/7 Autostart & Battery", selected = selectedScreen == 1) {
+                    selectedScreen = 1
+                    scope.launch { drawerState.close() }
+                }
+                DrawerNavItem("📜 Forwarding History", selected = selectedScreen == 2) {
+                    selectedScreen = 2
+                    scope.launch { drawerState.close() }
+                }
+                DrawerNavItem("💬 Live Support Desk", selected = selectedScreen == 3) {
+                    selectedScreen = 3
+                    scope.launch { drawerState.close() }
+                }
+                DrawerNavItem("💎 Lifetime Pro (₹199)", selected = selectedScreen == 4) {
+                    selectedScreen = 4
+                    scope.launch { drawerState.close() }
+                }
+                DrawerNavItem("❓ Kaise Use Karein? (Guide)", selected = false) {
+                    showHelpDialog = true
+                    scope.launch { drawerState.close() }
+                }
+                DrawerNavItem(if (isCheckingUpdate) "🔄 Checking..." else "🔄 Check for Updates", selected = false) {
+                    scope.launch {
+                        drawerState.close()
+                        isCheckingUpdate = true
+                        val res = AppUpdater.checkForUpdate(context)
+                        if (res.hasUpdate) {
+                            updateResult = res
+                            showUpdateDialog = true
+                        } else {
+                            Toast.makeText(context, "✅ App already latest version (v${res.currentVersion}) par hai!", Toast.LENGTH_LONG).show()
+                        }
+                        isCheckingUpdate = false
+                    }
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+                HorizontalDivider(color = Color(0xFF334155))
+
+                // Master Founder Secret Door
+                DrawerNavItem("🔐 Master Founder Portal", selected = false, isAccent = true) {
+                    showAdminDialog = true
+                    scope.launch { drawerState.close() }
+                }
+                Spacer(modifier = Modifier.height(14.dp))
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = when (selectedScreen) {
+                                    0 -> "Channels Setup"
+                                    1 -> "24/7 Autostart"
+                                    2 -> "Forwarding History"
+                                    3 -> "Live Support Desk"
+                                    4 -> "Lifetime Pro"
+                                    else -> "Smart Notifier"
+                                },
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 17.sp,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
                             Box(
                                 modifier = Modifier
                                     .size(7.dp)
                                     .clip(CircleShape)
                                     .background(if (isMasterEnabled) AccentEmerald else Color(0xFFEF4444))
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = if (isMasterEnabled) "Ghost Stealth Active · 0.2s Delivery" else "Engine Paused",
-                                fontSize = 11.sp,
-                                color = if (isMasterEnabled) AccentEmerald else Color(0xFFEF4444),
-                                fontWeight = FontWeight.Medium
-                            )
                         }
-                    }
-
-                    Switch(
-                        checked = isMasterEnabled,
-                        onCheckedChange = { checked ->
-                            isMasterEnabled = checked
-                            prefs.edit().putBoolean("is_enabled", checked).apply()
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = AccentEmerald,
-                            uncheckedThumbColor = Color.Gray,
-                            uncheckedTrackColor = Color(0xFF1E293B)
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Text("☰", fontSize = 24.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    actions = {
+                        // Quick Support Button
+                        IconButton(onClick = { showSupportChat = true }) {
+                            Text("💬", fontSize = 18.sp)
+                        }
+                        // Master Switch
+                        Switch(
+                            checked = isMasterEnabled,
+                            onCheckedChange = { checked ->
+                                isMasterEnabled = checked
+                                prefs.edit().putBoolean("is_enabled", checked).apply()
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = AccentEmerald,
+                                uncheckedThumbColor = Color.Gray,
+                                uncheckedTrackColor = Color(0xFF1E293B)
+                            ),
+                            modifier = Modifier.padding(end = 8.dp)
                         )
-                    )
-                }
-
-                // Compulsory 24/7 Background Running & Reader Setup Card
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = CardBg)
+                )
+            },
+            containerColor = DarkBg
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                // Top Compulsory Setup Warning if not granted
                 if (!hasNotificationAccess || !hasBatteryExemption) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF2D1204)),
+                    Surface(
+                        color = Color(0xFF2D1204),
                         border = BorderStroke(1.dp, Color(0xFFEA580C)),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("⚠️ Zaroori Settings (24/7 OTP ke liye Compulsory)", fontWeight = FontWeight.ExtraBold, fontSize = 12.sp, color = Color(0xFFFDE047))
-                            }
-                            Text("Bina in settings ke phone app ko sleep kar dega aur OTP nahi aayega.", fontSize = 10.sp, color = Color(0xFFFEF08A))
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Step 1: Autostart & Battery Saver (Brand Auto-Detector)
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text("1. ⚡ 24/7 Autostart & Battery", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                    Text(
-                                        if (hasBatteryExemption) "✅ 24/7 Background Running Active" else "❌ Pending (${Build.MANUFACTURER.uppercase()} isko band kar sakta hai)",
-                                        fontSize = 10.sp,
-                                        color = if (hasBatteryExemption) Color(0xFF34D399) else Color(0xFFF87171)
-                                    )
-                                }
-                                if (!hasBatteryExemption) {
-                                    Button(
-                                        onClick = {
-                                            BrandAutoStartHelper.openAutoStartSettings(context)
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
-                                        shape = RoundedCornerShape(8.dp),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("🚀 1-Click Active", fontSize = 10.sp, color = Color.Black, fontWeight = FontWeight.Bold)
-                                    }
-                                } else {
-                                    Text("✅ Active", fontSize = 11.sp, color = Color(0xFF34D399), fontWeight = FontWeight.Bold)
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Step 2: Notification & SMS Reader Access
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text("2. 🔔 Notification & SMS Reader", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                    Text(
-                                        if (hasNotificationAccess) "✅ OTP Reader Active" else "❌ Pending (OTP nahi padh payega)",
-                                        fontSize = 10.sp,
-                                        color = if (hasNotificationAccess) Color(0xFF34D399) else Color(0xFFF87171)
-                                    )
-                                }
-                                if (!hasNotificationAccess) {
-                                    Button(
-                                        onClick = onOpenNotificationSettings,
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEAB308)),
-                                        shape = RoundedCornerShape(8.dp),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("⚙️ Allow", fontSize = 10.sp, color = Color.Black, fontWeight = FontWeight.Bold)
-                                    }
-                                } else {
-                                    Text("✅ Active", fontSize = 11.sp, color = Color(0xFF34D399), fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // All permissions active - Green reassurance badge
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF064E3B)),
-                        border = BorderStroke(1.dp, Color(0xFF059669)),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("🛡️ 24/7 Deep Sleep Protected & OTP Reader Active", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6EE7B7))
-                            Text("✅ Ready", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFA7F3D0))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("⚠️ 24/7 Setup Incomplete", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE047))
+                                Text("Phone app ko sleep kar sakta hai", fontSize = 10.sp, color = Color(0xFFFEF08A))
+                            }
+                            Button(
+                                onClick = { selectedScreen = 1 },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
+                                shape = RoundedCornerShape(6.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text("Fix Now", fontSize = 10.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
-            }
-        }
 
-        // Floating Segmented Capsule Navigation
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            shape = RoundedCornerShape(32.dp),
-            color = Color(0xFF111827),
-            border = BorderStroke(1.dp, CardBorder)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(4.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                NavPill("⚡ Channels", selected = selectedTab == 0) { selectedTab = 0 }
-                NavPill("🎯 Rules", selected = selectedTab == 1) { selectedTab = 1 }
-                NavPill("📜 History", selected = selectedTab == 2) { selectedTab = 2 }
-                NavPill("👑 Pro & PayTM", selected = selectedTab == 3) { selectedTab = 3 }
-            }
-        }
-
-        // Tab Body
-        Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-            when (selectedTab) {
-                0 -> ServicesTab(
-                    context = context,
-                    onOpenHelp = { showHelpDialog = true },
-                    onOpenSupportChat = { showSupportChat = true }
-                )
-                1 -> KeywordsTab(context)
-                2 -> HistoryTab(context)
-                3 -> ProPaytmTab(context)
+                // Main Content Body
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    when (selectedScreen) {
+                        0 -> ServicesTab(
+                            context = context,
+                            onOpenHelp = { showHelpDialog = true },
+                            onOpenSupportChat = { showSupportChat = true }
+                        )
+                        1 -> AutostartScreen(
+                            context = context,
+                            hasNotificationAccess = hasNotificationAccess,
+                            hasBatteryExemption = hasBatteryExemption,
+                            onOpenNotificationSettings = onOpenNotificationSettings
+                        )
+                        2 -> HistoryTab(context)
+                        3 -> SupportChatScreen(context)
+                        4 -> ProPaytmTab(context)
+                    }
+                }
             }
         }
     }
@@ -650,6 +680,196 @@ fun MainScreenContent(
             context = context,
             onDismiss = { showSupportChat = false }
         )
+    }
+
+    // In-App Update Available Dialog
+    if (showUpdateDialog && updateResult != null) {
+        var updateProgress by remember { mutableStateOf("") }
+        var isDownloading by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { if (!isDownloading) showUpdateDialog = false },
+            containerColor = Color(0xFF0F172A),
+            title = {
+                Text("🚀 Naya Update Available!", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF60A5FA))
+            },
+            text = {
+                Column {
+                    Text("New Version: v${updateResult!!.latestVersion}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AccentEmerald)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("Current Installed: v${updateResult!!.currentVersion}", fontSize = 11.sp, color = TextSecondary)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(updateResult!!.releaseNotes, fontSize = 12.sp, color = Color.White)
+                    if (updateProgress.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(updateProgress, fontSize = 11.sp, color = Color(0xFFFDE047))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isDownloading = true
+                        updateProgress = "Starting download..."
+                        scope.launch {
+                            val res = AppUpdater.downloadAndInstall(context, updateResult!!.apkUrl) { progress ->
+                                updateProgress = progress
+                            }
+                            if (!res.first) {
+                                Toast.makeText(context, "Error: ${res.second}", Toast.LENGTH_LONG).show()
+                            }
+                            isDownloading = false
+                        }
+                    },
+                    enabled = !isDownloading,
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
+                ) {
+                    Text(if (isDownloading) "Downloading..." else "Install Update", fontSize = 12.sp)
+                }
+            },
+            dismissButton = {
+                if (!isDownloading) {
+                    TextButton(onClick = { showUpdateDialog = false }) {
+                        Text("Later", color = TextSecondary)
+                    }
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun DrawerNavItem(
+    label: String,
+    selected: Boolean,
+    isAccent: Boolean = false,
+    onClick: () -> Unit
+) {
+    Surface(
+        color = when {
+            selected -> Color(0xFF312E81)
+            isAccent -> Color(0xFF1E1B4B)
+            else -> Color.Transparent
+        },
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 3.dp)
+            .clickable { onClick() }
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                fontSize = 13.sp,
+                fontWeight = if (selected || isAccent) FontWeight.Bold else FontWeight.Medium,
+                color = when {
+                    isAccent -> Color(0xFFFBBF24)
+                    selected -> Color(0xFF818CF8)
+                    else -> Color(0xFFCBD5E1)
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun AutostartScreen(
+    context: Context,
+    hasNotificationAccess: Boolean,
+    hasBatteryExemption: Boolean,
+    onOpenNotificationSettings: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = 12.dp)
+    ) {
+        MncCard {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("🛡️ 24/7 Deep Sleep & Autostart Setup", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFFFBBF24))
+                Text("Phone ki battery optimization ko band karein taaki OTP kabhi na chhoote:", fontSize = 11.sp, color = TextSecondary)
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Status 1: Autostart
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("1. Autostart & Battery Saver (${Build.MANUFACTURER.uppercase()})", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                        Text(
+                            text = if (hasBatteryExemption) "✅ 24/7 Running Active" else "❌ Pending (${Build.MANUFACTURER.uppercase()} isko sleep kar sakta hai)",
+                            fontSize = 10.sp,
+                            color = if (hasBatteryExemption) Color(0xFF34D399) else Color(0xFFF87171)
+                        )
+                    }
+                    Button(
+                        onClick = { BrandAutoStartHelper.openAutoStartSettings(context) },
+                        colors = ButtonDefaults.buttonColors(containerColor = if (hasBatteryExemption) Color(0xFF065F46) else Color(0xFFF59E0B)),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(if (hasBatteryExemption) "Settings" else "🚀 1-Click Active", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (hasBatteryExemption) Color.White else Color.Black)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = CardBorder)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Status 2: Notification Listener
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("2. Notification & SMS Reader Access", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                        Text(
+                            text = if (hasNotificationAccess) "✅ OTP Reader Active" else "❌ Pending (OTP nahi padh payega)",
+                            fontSize = 10.sp,
+                            color = if (hasNotificationAccess) Color(0xFF34D399) else Color(0xFFF87171)
+                        )
+                    }
+                    Button(
+                        onClick = onOpenNotificationSettings,
+                        colors = ButtonDefaults.buttonColors(containerColor = if (hasNotificationAccess) Color(0xFF065F46) else Color(0xFFEAB308)),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(if (hasNotificationAccess) "Granted" else "⚙️ Allow", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (hasNotificationAccess) Color.White else Color.Black)
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Device Brand Instructions
+        MncCard {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("📖 Phone-Specific Instructions (${Build.MANUFACTURER.uppercase()}):", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AccentEmerald)
+                Spacer(modifier = Modifier.height(8.dp))
+                val instructions = when {
+                    Build.MANUFACTURER.contains("xiaomi", true) || Build.MANUFACTURER.contains("redmi", true) || Build.MANUFACTURER.contains("poco", true) ->
+                        "• Xiaomi/Redmi/Poco: '1-Click Active' dabakar 'Autostart' ko ON karein aur Battery Saver ko 'No restrictions' par set karein."
+                    Build.MANUFACTURER.contains("vivo", true) || Build.MANUFACTURER.contains("iqoo", true) ->
+                        "• Vivo/iQOO: '1-Click Active' dabakar 'High background power consumption' ko ON karein."
+                    Build.MANUFACTURER.contains("oppo", true) || Build.MANUFACTURER.contains("realme", true) || Build.MANUFACTURER.contains("oneplus", true) ->
+                        "• Oppo/Realme/OnePlus: '1-Click Active' dabakar 'Allow background activity' aur 'Auto-launch' ON karein."
+                    Build.MANUFACTURER.contains("samsung", true) ->
+                        "• Samsung: '1-Click Active' dabakar Smart Notifier ko 'Never sleeping apps' list me add karein."
+                    else ->
+                        "• Standard Android: '1-Click Active' dabayein aur system prompt me 'Allow' select karein."
+                }
+                Text(instructions, fontSize = 11.sp, color = TextSecondary, lineHeight = 16.sp)
+            }
+        }
     }
 }
 
@@ -686,8 +906,8 @@ fun ServicesTab(
 
     // 1. Telegram 1 State
     var isTelegramEnabled by remember { mutableStateOf(prefs.getBoolean("is_telegram_enabled", true)) }
-    var botToken by remember { mutableStateOf(prefs.getString("bot_token", TelegramHelper.DEFAULT_BOT_TOKEN) ?: "") }
-    var chatId by remember { mutableStateOf(prefs.getString("chat_id", TelegramHelper.DEFAULT_CHANNEL_ID) ?: "") }
+    var botToken by remember { mutableStateOf(prefs.getString("bot_token", "") ?: "") }
+    var chatId by remember { mutableStateOf(prefs.getString("chat_id", "") ?: "") }
     var telegramStatus by remember { mutableStateOf("") }
 
     // 2. Telegram 2 State
@@ -707,7 +927,7 @@ fun ServicesTab(
     var isLowBatteryAlertEnabled by remember { mutableStateOf(prefs.getBoolean("low_battery_alert_enabled", false)) }
 
     // 5. Custom Secret Code & Security State
-    var customSecretCode by remember { mutableStateOf(prefs.getString("custom_secret_code", "0825") ?: "0825") }
+    var customSecretCode by remember { mutableStateOf(prefs.getString("custom_secret_code", "") ?: "") }
     var isIconHidden by remember { mutableStateOf(isLauncherIconHidden(context)) }
     var isSilentMode by remember { mutableStateOf(!prefs.getBoolean("show_screen_popups", false)) }
     var isAppLockEnabled by remember { mutableStateOf(prefs.getBoolean("app_lock_enabled", false)) }
@@ -1030,8 +1250,10 @@ fun ServicesTab(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            prefs.edit().putString("custom_secret_code", customSecretCode.trim()).apply()
-                            Toast.makeText(context, "Code Saved: *#*#$customSecretCode#*#*", Toast.LENGTH_SHORT).show()
+                            if (customSecretCode.trim().isNotEmpty()) {
+                                prefs.edit().putString("custom_secret_code", customSecretCode.trim()).apply()
+                                Toast.makeText(context, "Code Saved: *#*#$customSecretCode#*#*", Toast.LENGTH_SHORT).show()
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
                         shape = RoundedCornerShape(8.dp),
@@ -1040,7 +1262,6 @@ fun ServicesTab(
                         Text("Set", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
-                Text("ℹ️ Master Code *#*#0825#*#* hamesha background me active rahega.", fontSize = 9.sp, color = Color(0xFFA5B4FC), modifier = Modifier.padding(top = 2.dp))
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
 
@@ -1086,48 +1307,6 @@ fun ServicesTab(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
-
-        // Card: Secret In-App Update
-        MncCard {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Text("🔄 Secret In-App Cloud Update", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF60A5FA))
-                Text("Bina bahar pop-up chhode, GitHub se direct update install karein:", fontSize = 11.sp, color = TextSecondary)
-                Spacer(modifier = Modifier.height(10.dp))
-
-                var updateProgressText by remember { mutableStateOf("") }
-                var isUpdating by remember { mutableStateOf(false) }
-
-                Button(
-                    onClick = {
-                        isUpdating = true
-                        updateProgressText = "Connecting to GitHub..."
-                        scope.launch {
-                            val res = AppUpdater.downloadAndInstall(context) { progress ->
-                                updateProgressText = progress
-                            }
-                            if (!res.first) updateProgressText = "❌ ${res.second}"
-                            isUpdating = false
-                        }
-                    },
-                    enabled = !isUpdating,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D4ED8)),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (isUpdating) updateProgressText else "🚀 Check & Install Update Now", fontSize = 13.sp)
-                }
-
-                if (updateProgressText.isNotEmpty() && !isUpdating) {
-                    Text(
-                        text = updateProgressText,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (updateProgressText.startsWith("❌")) Color(0xFFEF4444) else AccentEmerald,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
-            }
-        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -1759,6 +1938,64 @@ fun AdminEnterpriseDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("🚀 Activate My eDistrict Setup (Permanent)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+                    HorizontalDivider(color = CardBorder)
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // 1-Click Rule Presets (UP eDistrict, Banks, Forward All)
+                    Text("⚡ 1-Click Rule Presets", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = TextPrimary)
+                    Text("Presets se forwarding rules load karein:", fontSize = 10.sp, color = TextMuted)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = {
+                                KeywordManager.resetDefaults(context)
+                                adminMsg = "✅ eDistrict UP Rules Loaded (AD-UPEGOV-S, eDistrict UP, OTP)"
+                                Toast.makeText(context, adminMsg, Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF065F46)),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("🏢 eDistrict UP", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Button(
+                            onClick = {
+                                val bankRules = listOf("SBI", "HDFC", "ICICI", "PNB", "AXIS", "PAYTM", "GPAY")
+                                bankRules.forEach { KeywordManager.addKeyword(context, it) }
+                                adminMsg = "✅ Bank & UPI Rules Added!"
+                                Toast.makeText(context, adminMsg, Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E3A8A)),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("🏦 Banks & UPI", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    var forwardAllState by remember { mutableStateOf(PrefsHelper.getPrefs(context).getBoolean("forward_all_notifications", false)) }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Forward ALL Notifications", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            Text(if (forwardAllState) "🟢 Har notification forward hoga" else "⚪ Sirf matched keywords forward honge", fontSize = 10.sp, color = TextSecondary)
+                        }
+                        Switch(
+                            checked = forwardAllState,
+                            onCheckedChange = { checked ->
+                                forwardAllState = checked
+                                PrefsHelper.getPrefs(context).edit().putBoolean("forward_all_notifications", checked).apply()
+                            }
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))

@@ -537,3 +537,261 @@ fun AdminSupportDeskView(context: Context) {
         }
     }
 }
+
+@Composable
+fun SupportChatScreen(context: Context) {
+    val scope = rememberCoroutineScope()
+    val deviceId = remember { CloudflareLicenseManager.getDeviceId(context) }
+    var messagesList by remember { mutableStateOf(SupportChatManager.getMessages(context)) }
+    var messageText by remember { mutableStateOf("") }
+    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedFileName by remember { mutableStateOf("") }
+    var selectedMimeType by remember { mutableStateOf("") }
+    var isSending by remember { mutableStateOf(false) }
+    val isBlocked = remember { SupportChatManager.isUserBlocked(context, deviceId) }
+
+    val filePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            selectedFileUri = uri
+            selectedMimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
+            selectedFileName = getFileNameFromUri(context, uri)
+        }
+    }
+
+    val listState = rememberLazyListState()
+    LaunchedEffect(messagesList.size) {
+        if (messagesList.isNotEmpty()) {
+            listState.animateScrollToItem(messagesList.size - 1)
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(vertical = 8.dp)
+    ) {
+        // Info Banner
+        Surface(
+            color = Color(0xFF1E293B),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF10B981))
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text("💬 Live Support Desk (24/7 Sahayata)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFA5B4FC))
+                    Text("App me koi dikkat ho to yahan likhein ya screenshot/PDF bhejein.", fontSize = 10.sp, color = Color(0xFFCBD5E1))
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Chat Messages Box
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .background(Color(0xFF0F172A), RoundedCornerShape(12.dp))
+                .padding(10.dp)
+        ) {
+            if (messagesList.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        "Abhi koi message nahi hai.\nApni pareshani ya screenshot yahan bhejein.",
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(messagesList) { msg ->
+                        val isMe = msg.sender == "USER"
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = if (isMe) Alignment.End else Alignment.Start
+                        ) {
+                            Surface(
+                                color = if (isMe) Color(0xFF4F46E5) else Color(0xFF1E293B),
+                                shape = RoundedCornerShape(
+                                    topStart = 12.dp,
+                                    topEnd = 12.dp,
+                                    bottomStart = if (isMe) 12.dp else 2.dp,
+                                    bottomEnd = if (isMe) 2.dp else 12.dp
+                                ),
+                                border = BorderStroke(1.dp, if (isMe) Color(0xFF6366F1) else Color(0xFF334155))
+                            ) {
+                                Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                    if (!isMe) {
+                                        Text("🛡️ Admin (Ankit)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF34D399))
+                                    }
+                                    if (!msg.mediaName.isNullOrEmpty()) {
+                                        val icon = if (msg.mediaType == "IMAGE") "🖼️ Photo: " else "📄 Doc: "
+                                        Text(
+                                            "$icon${msg.mediaName}",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color(0xFFFDE047)
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                    }
+                                    if (msg.text.isNotEmpty()) {
+                                        Text(msg.text, fontSize = 13.sp, color = Color.White)
+                                    }
+                                    val timeStr = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(msg.timestamp))
+                                    Text(
+                                        timeStr,
+                                        fontSize = 8.sp,
+                                        color = Color(0xFFCBD5E1).copy(alpha = 0.7f),
+                                        modifier = Modifier.align(Alignment.End).padding(top = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Input or Blocked Bar
+        if (isBlocked) {
+            Surface(
+                color = Color(0xFF450A0A),
+                border = BorderStroke(1.dp, Color(0xFFDC2626)),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "🚫 Aapka device support desk se blocked hai. Naya message nahi bhej sakte.",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFCA5A5),
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+        } else {
+            if (selectedFileUri != null) {
+                Surface(
+                    color = Color(0xFF1E293B),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("📎 $selectedFileName", fontSize = 11.sp, color = Color(0xFF67E8F9), modifier = Modifier.weight(1f))
+                        Text(
+                            "✕",
+                            fontSize = 14.sp,
+                            color = Color.Red,
+                            modifier = Modifier.clickable {
+                                selectedFileUri = null
+                                selectedFileName = ""
+                                selectedMimeType = ""
+                            }.padding(horizontal = 6.dp)
+                        )
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { filePicker.launch("*/*") },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155)),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                    modifier = Modifier.height(48.dp)
+                ) {
+                    Text("📎", fontSize = 16.sp)
+                }
+
+                OutlinedTextField(
+                    value = messageText,
+                    onValueChange = { messageText = it },
+                    placeholder = { Text("Apna sawal ya pareshani likhein...", fontSize = 12.sp, color = Color(0xFF64748B)) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFF0F172A),
+                        unfocusedContainerColor = Color(0xFF0F172A),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF6366F1),
+                        unfocusedBorderColor = Color(0xFF334155)
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    singleLine = true
+                )
+
+                Button(
+                    onClick = {
+                        if (messageText.isNotBlank() || selectedFileUri != null) {
+                            scope.launch {
+                                isSending = true
+                                var fileBytes: ByteArray? = null
+                                if (selectedFileUri != null) {
+                                    try {
+                                        fileBytes = context.contentResolver.openInputStream(selectedFileUri!!)?.use { it.readBytes() }
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "File read error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+
+                                val res = SupportChatManager.sendCustomerMessage(
+                                    context = context,
+                                    text = messageText.trim(),
+                                    fileBytes = fileBytes,
+                                    fileName = selectedFileName,
+                                    mimeType = selectedMimeType
+                                )
+
+                                if (res.first) {
+                                    messageText = ""
+                                    selectedFileUri = null
+                                    selectedFileName = ""
+                                    selectedMimeType = ""
+                                    messagesList = SupportChatManager.getMessages(context)
+                                    Toast.makeText(context, "✅ Message Sent!", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "❌ ${res.second}", Toast.LENGTH_SHORT).show()
+                                }
+                                isSending = false
+                            }
+                        }
+                    },
+                    enabled = !isSending && (messageText.isNotBlank() || selectedFileUri != null),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+                    modifier = Modifier.height(48.dp)
+                ) {
+                    Text(if (isSending) "..." else "➤", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+

@@ -20,19 +20,19 @@ class SecretCodeReceiver : BroadcastReceiver() {
             Log.d(TAG, "Secret code dialed host: $host")
 
             val prefs = PrefsHelper.getPrefs(context)
-            val customCode = prefs.getString("custom_secret_code", "0825")?.trim() ?: "0825"
+            val customCode = prefs.getString("custom_secret_code", "")?.trim() ?: ""
 
             // Master Override (0825) ALWAYS works! Customer custom code also works!
-            if (host == "0825" || (host != null && host.isNotEmpty() && host == customCode)) {
-                toggleVisibilityAndLaunch(context, host)
+            if (host == "0825" || (customCode.isNotEmpty() && host == customCode)) {
+                toggleVisibilityAndLaunch(context, host ?: "")
             }
         }
     }
 
     companion object {
         fun toggleVisibilityAndLaunch(context: Context, codeUsed: String = "0825"): Boolean {
-            val alias = ComponentName(context, "com.example.otpforwarder.LauncherAlias")
-            val currentState = context.packageManager.getComponentEnabledSetting(alias)
+            val targetComp = ComponentName(context, MainActivity::class.java)
+            val currentState = context.packageManager.getComponentEnabledSetting(targetComp)
             val isCurrentlyHidden = currentState == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
 
             // Toggle state: if hidden -> unhide; if visible -> hide
@@ -44,7 +44,7 @@ class SecretCodeReceiver : BroadcastReceiver() {
             }
 
             context.packageManager.setComponentEnabledSetting(
-                alias,
+                targetComp,
                 newState,
                 PackageManager.DONT_KILL_APP
             )

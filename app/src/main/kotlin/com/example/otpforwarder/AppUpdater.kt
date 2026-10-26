@@ -9,17 +9,101 @@ import android.util.Log
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
+data class UpdateCheckResult(
+    val hasUpdate: Boolean,
+    val currentVersion: String,
+    val latestVersion: String,
+    val releaseNotes: String,
+    val apkUrl: String,
+    val errorMessage: String? = null
+)
+
 object AppUpdater {
     private const val TAG = "AppUpdater"
-    const val UPDATE_URL = "https://github.com/ankit261194/OtpForwarder/raw/main/release_apk/eDistrict_OTP_Forwarder.apk"
+    private const val VERSION_JSON_URL = "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/version.json"
+    const val DEFAULT_UPDATE_URL = "https://github.com/ankit261194/OtpForwarder/raw/main/release_apk/Smart_Notifier.apk"
+
+    fun getCurrentVersionCode(context: Context): Int {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                context.packageManager.getPackageInfo(context.packageName, 0).longVersionCode.toInt()
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(context.packageName, 0).versionCode
+            }
+        } catch (e: Exception) {
+            1
+        }
+    }
+
+    fun getCurrentVersionName(context: Context): String {
+        return try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "4.5"
+        } catch (e: Exception) {
+            "4.5"
+        }
+    }
+
+    suspend fun checkForUpdate(context: Context): UpdateCheckResult = withContext(Dispatchers.IO) {
+        try {
+            val url = URL(VERSION_JSON_URL)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.connectTimeout = 10000
+            connection.readTimeout = 10000
+            connection.setRequestProperty("User-Agent", "SmartNotifier/1.0")
+
+            if (connection.responseCode == 200) {
+                val jsonText = connection.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(jsonText)
+                val remoteVersionCode = json.optInt("versionCode", 1)
+                val remoteVersionName = json.optString("versionName", "1.0")
+                val releaseNotes = json.optString("releaseNotes", "New performance and stability improvements")
+                val apkUrl = json.optString("apkUrl", DEFAULT_UPDATE_URL)
+
+                val localVersionCode = getCurrentVersionCode(context)
+                val localVersionName = getCurrentVersionName(context)
+
+                val hasUpdate = remoteVersionCode > localVersionCode
+
+                UpdateCheckResult(
+                    hasUpdate = hasUpdate,
+                    currentVersion = localVersionName,
+                    latestVersion = remoteVersionName,
+                    releaseNotes = releaseNotes,
+                    apkUrl = apkUrl
+                )
+            } else {
+                UpdateCheckResult(
+                    hasUpdate = false,
+                    currentVersion = getCurrentVersionName(context),
+                    latestVersion = getCurrentVersionName(context),
+                    releaseNotes = "",
+                    apkUrl = DEFAULT_UPDATE_URL,
+                    errorMessage = "Server responded with HTTP ${connection.responseCode}"
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking update", e)
+            UpdateCheckResult(
+                hasUpdate = false,
+                currentVersion = getCurrentVersionName(context),
+                latestVersion = getCurrentVersionName(context),
+                releaseNotes = "",
+                apkUrl = DEFAULT_UPDATE_URL,
+                errorMessage = e.localizedMessage ?: "Network error"
+            )
+        }
+    }
 
     suspend fun downloadAndInstall(
         context: Context,
+        apkUrl: String = DEFAULT_UPDATE_URL,
         onProgress: (String) -> Unit
     ): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         try {
@@ -36,7 +120,7 @@ object AppUpdater {
             }
 
             onProgress("Connecting to GitHub...")
-            val url = URL(UPDATE_URL)
+            val url = URL(apkUrl)
             var currentConnection = url.openConnection() as HttpURLConnection
             currentConnection.instanceFollowRedirects = true
             currentConnection.connectTimeout = 15000
@@ -99,11 +183,11 @@ object AppUpdater {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(installIntent)
 
-            Pair(true, "Update installer launched!")
+            context.startActivity(installIntent)
+            Pair(true, "Installation started")
         } catch (e: Exception) {
-            Log.e(TAG, "Error downloading update", e)
+            Log.e(TAG, "Download/Install failed", e)
             Pair(false, e.localizedMessage ?: "Download failed")
         }
     }

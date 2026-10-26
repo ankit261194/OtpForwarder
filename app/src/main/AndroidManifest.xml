@@ -29,11 +29,15 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Main Activity with Secret Deep Links -->
+        <!-- Main Activity (Single Clean Launcher Entry - Zero Duplicate App Bug) -->
         <activity
             android:name=".MainActivity"
             android:directBootAware="true"
             android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -47,20 +51,6 @@
                 <data android:scheme="otpforwarder" android:host="settings" />
             </intent-filter>
         </activity>
-
-        <!-- Launcher Alias for Icon Hiding (Disabling this hides icon without disabling MainActivity) -->
-        <activity-alias
-            android:name=".LauncherAlias"
-            android:targetActivity=".MainActivity"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/app_name"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
 
         <!-- Direct Boot / Boot Receiver: Starts immediately upon device power on before unlock -->
         <receiver
