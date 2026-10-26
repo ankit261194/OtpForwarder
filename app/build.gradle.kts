@@ -8,7 +8,7 @@ android {
   namespace = "com.example.otpforwarder"
   compileSdk = 36
   defaultConfig {
-    applicationId = "com.example.otpforwarder"
+    applicationId = "com.smartnotifier.app"
     minSdk = 24
     targetSdk = 35
     versionCode = 7
@@ -19,7 +19,7 @@ android {
     create("release") {
       storeFile = file("release.jks")
       storePassword = "password123"
-      keyAlias = "releaseKey"
+      keyAlias = "smartnotifier"
       keyPassword = "password123"
     }
   }
