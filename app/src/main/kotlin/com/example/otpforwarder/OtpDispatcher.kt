@@ -11,7 +11,6 @@ import kotlinx.coroutines.withContext
 
 object OtpDispatcher {
     private const val TAG = "OtpDispatcher"
-    private const val PREFS_NAME = "otp_prefs"
 
     private var lastForwardedText: String = ""
     private var lastForwardedTime: Long = 0L
@@ -27,12 +26,12 @@ object OtpDispatcher {
         return true
     }
 
-    suspend fun dispatch(context: Context, sender: String, fullMessage: String) {
+    suspend fun dispatch(context: Context, sender: String, fullMessage: String): Boolean {
         val prefs = PrefsHelper.getPrefs(context)
         val isMasterEnabled = prefs.getBoolean("is_enabled", true)
         if (!isMasterEnabled) {
             Log.d(TAG, "Master forwarding switch is OFF")
-            return
+            return false
         }
 
         val forwardAll = prefs.getBoolean("forward_all_notifications", false)
@@ -40,13 +39,13 @@ object OtpDispatcher {
         // Match against dynamic keywords (bypassed if forwardAll is ON)
         if (!forwardAll && !KeywordManager.matches(context, sender, fullMessage)) {
             Log.d(TAG, "Message does not match any keyword and Forward ALL is OFF. Sender: $sender")
-            return
+            return false
         }
 
         // Deduplication
         if (!shouldProcess(fullMessage)) {
             Log.d(TAG, "Duplicate message ignored")
-            return
+            return false
         }
 
         // Extract OTP accurately (Contextual match first, then 4-8 digit fallback)
@@ -58,15 +57,21 @@ object OtpDispatcher {
             Regex("""\b\d{4,8}\b""").find(fullMessage)?.value ?: "OTP"
         }
 
-        val alertText = buildString {
-            if (matchedOtp != "OTP") {
-                append("🔔 eDistrict / OTP Alert\n\n")
-                append("🔑 OTP Code: $matchedOtp\n\n")
-            } else {
-                append("🔔 Notification Alert\n\n")
+        // Feature: Only OTP Mode (Sends solely the raw OTP number for 1-tap copy)
+        val onlyOtpMode = prefs.getBoolean("only_otp_mode", false)
+        val alertText = if (onlyOtpMode && matchedOtp != "OTP" && matchedOtp.isNotBlank()) {
+            matchedOtp
+        } else {
+            buildString {
+                if (matchedOtp != "OTP") {
+                    append("🔔 eDistrict / OTP Alert\n\n")
+                    append("🔑 OTP Code: $matchedOtp\n\n")
+                } else {
+                    append("🔔 Notification Alert\n\n")
+                }
+                append("📩 Message: $fullMessage\n")
+                append("👤 Sender: $sender")
             }
-            append("📩 Message: $fullMessage\n")
-            append("👤 Sender: $sender")
         }
 
         var telegramStatus = "Disabled"
@@ -155,6 +160,7 @@ object OtpDispatcher {
                 showLocalNotification(context, "OTP: $matchedOtp Forwarded!", alertText)
             }
         }
+        return true
     }
 
     private fun showLocalNotification(context: Context, title: String, content: String) {

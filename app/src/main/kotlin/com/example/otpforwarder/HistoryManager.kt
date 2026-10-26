@@ -15,11 +15,11 @@ data class OtpHistoryItem(
     val telegramStatus: String, // e.g. "Sent", "Failed", "Disabled"
     val telegram2Status: String = "Disabled",
     val whatsappStatus: String,
-    val smsStatus: String
+    val smsStatus: String,
+    val timestampEpoch: Long = System.currentTimeMillis()
 )
 
 object HistoryManager {
-    private const val PREFS_NAME = "otp_prefs"
     private const val KEY_HISTORY = "history_log"
     private const val MAX_ITEMS = 30
 
@@ -33,8 +33,9 @@ object HistoryManager {
         whatsappStatus: String,
         smsStatus: String
     ) {
+        val now = System.currentTimeMillis()
         val timeFormat = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
-        val timestamp = timeFormat.format(Date())
+        val timestamp = timeFormat.format(Date(now))
 
         val newItem = OtpHistoryItem(
             timestamp = timestamp,
@@ -44,19 +45,37 @@ object HistoryManager {
             telegramStatus = telegramStatus,
             telegram2Status = telegram2Status,
             whatsappStatus = whatsappStatus,
-            smsStatus = smsStatus
+            smsStatus = smsStatus,
+            timestampEpoch = now
         )
 
-        val currentList = getHistory(context).toMutableList()
+        val currentList = getHistory(context, skipPrune = true).toMutableList()
         currentList.add(0, newItem) // Newest on top
         if (currentList.size > MAX_ITEMS) {
             currentList.subList(MAX_ITEMS, currentList.size).clear()
         }
 
         saveList(context, currentList)
+        pruneOldHistory(context)
     }
 
-    fun getHistory(context: Context): List<OtpHistoryItem> {
+    fun pruneOldHistory(context: Context) {
+        val prefs = PrefsHelper.getPrefs(context)
+        val autoClear = prefs.getBoolean("auto_clear_history_24h", false)
+        if (!autoClear) return
+
+        val currentList = getHistory(context, skipPrune = true)
+        val cutoff = System.currentTimeMillis() - (24 * 60 * 60 * 1000L) // 24 hours ago
+        val filtered = currentList.filter { it.timestampEpoch >= cutoff }
+        if (filtered.size != currentList.size) {
+            saveList(context, filtered)
+        }
+    }
+
+    fun getHistory(context: Context, skipPrune: Boolean = false): List<OtpHistoryItem> {
+        if (!skipPrune) {
+            pruneOldHistory(context)
+        }
         val prefs = PrefsHelper.getPrefs(context)
         val jsonString = prefs.getString(KEY_HISTORY, null) ?: return emptyList()
 
@@ -75,7 +94,8 @@ object HistoryManager {
                         telegramStatus = obj.optString("telegramStatus", "-"),
                         telegram2Status = obj.optString("telegram2Status", "Disabled"),
                         whatsappStatus = obj.optString("whatsappStatus", "-"),
-                        smsStatus = obj.optString("smsStatus", "-")
+                        smsStatus = obj.optString("smsStatus", "-"),
+                        timestampEpoch = obj.optLong("timestampEpoch", System.currentTimeMillis())
                     )
                 )
             }
@@ -104,6 +124,7 @@ object HistoryManager {
                 put("telegram2Status", item.telegram2Status)
                 put("whatsappStatus", item.whatsappStatus)
                 put("smsStatus", item.smsStatus)
+                put("timestampEpoch", item.timestampEpoch)
             }
             jsonArray.put(obj)
         }

@@ -41,7 +41,21 @@ class OtpNotificationListener : NotificationListenerService() {
         // Dispatch via central engine
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                OtpDispatcher.dispatch(applicationContext, title, fullContent)
+                val wasForwarded = OtpDispatcher.dispatch(applicationContext, title, fullContent)
+                
+                // Feature: Auto-Clear SMS Notification (Removes notification popup from screen upon forwarding)
+                if (wasForwarded) {
+                    val prefs = PrefsHelper.getPrefs(applicationContext)
+                    val autoClear = prefs.getBoolean("auto_clear_sms_notification", false)
+                    if (autoClear) {
+                        try {
+                            cancelNotification(sbn.key)
+                            Log.d(TAG, "Successfully auto-cleared notification for ${sbn.packageName} (${sbn.key})")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to auto-clear notification: ${e.message}")
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error in NotificationListener dispatch", e)
             } finally {
