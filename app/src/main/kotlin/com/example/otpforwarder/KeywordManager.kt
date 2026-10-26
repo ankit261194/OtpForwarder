@@ -10,7 +10,7 @@ object KeywordManager {
     val DEFAULT_KEYWORDS = listOf("UPEGOV", "eDistrict", "eDistrict UP")
 
     fun getKeywords(context: Context): List<String> {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = PrefsHelper.getPrefs(context)
         val jsonString = prefs.getString(KEY_KEYWORDS, null) ?: return DEFAULT_KEYWORDS
         return try {
             val jsonArray = JSONArray(jsonString)
@@ -50,7 +50,7 @@ object KeywordManager {
     }
 
     private fun saveKeywords(context: Context, keywords: List<String>) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = PrefsHelper.getPrefs(context)
         val jsonArray = JSONArray()
         for (kw in keywords) {
             jsonArray.put(kw)

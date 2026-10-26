@@ -124,7 +124,7 @@ fun MainScreenContent(
     onRequestPermissions: () -> Unit
 ) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("otp_prefs", Context.MODE_PRIVATE) }
+    val prefs = remember { PrefsHelper.getPrefs(context) }
     var selectedTab by remember { mutableStateOf(0) }
     var isMasterEnabled by remember { mutableStateOf(prefs.getBoolean("is_enabled", true)) }
     var hasNotificationAccess by remember { mutableStateOf(checkNotificationAccess(context)) }
@@ -230,7 +230,7 @@ fun MainScreenContent(
 
 @Composable
 fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
-    val prefs = remember { context.getSharedPreferences("otp_prefs", Context.MODE_PRIVATE) }
+    val prefs = remember { PrefsHelper.getPrefs(context) }
     val scope = rememberCoroutineScope()
 
     // Telegram 1 State (Primary)
@@ -784,7 +784,7 @@ fun ServicesTab(context: Context, onRequestPermissions: () -> Unit) {
 
 @Composable
 fun KeywordsTab(context: Context) {
-    val prefs = remember { context.getSharedPreferences("otp_prefs", Context.MODE_PRIVATE) }
+    val prefs = remember { PrefsHelper.getPrefs(context) }
     var forwardAll by remember { mutableStateOf(prefs.getBoolean("forward_all_notifications", false)) }
     var keywordsList by remember { mutableStateOf(KeywordManager.getKeywords(context)) }
     var newKeywordText by remember { mutableStateOf("") }

@@ -57,7 +57,7 @@ object HistoryManager {
     }
 
     fun getHistory(context: Context): List<OtpHistoryItem> {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = PrefsHelper.getPrefs(context)
         val jsonString = prefs.getString(KEY_HISTORY, null) ?: return emptyList()
 
         return try {
@@ -86,12 +86,12 @@ object HistoryManager {
     }
 
     fun clearHistory(context: Context) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = PrefsHelper.getPrefs(context)
         prefs.edit().remove(KEY_HISTORY).apply()
     }
 
     private fun saveList(context: Context, list: List<OtpHistoryItem>) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = PrefsHelper.getPrefs(context)
         val jsonArray = JSONArray()
         for (item in list) {
             val obj = JSONObject().apply {

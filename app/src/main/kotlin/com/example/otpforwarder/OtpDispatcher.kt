@@ -28,7 +28,7 @@ object OtpDispatcher {
     }
 
     suspend fun dispatch(context: Context, sender: String, fullMessage: String) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = PrefsHelper.getPrefs(context)
         val isMasterEnabled = prefs.getBoolean("is_enabled", true)
         if (!isMasterEnabled) {
             Log.d(TAG, "Master forwarding switch is OFF")
