@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
@@ -92,6 +93,14 @@ fun checkNotificationAccess(context: Context): Boolean {
     return flat != null && flat.contains(pkgName)
 }
 
+fun isIgnoringBatteryOptimizations(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return true
+        return pm.isIgnoringBatteryOptimizations(context.packageName)
+    }
+    return true
+}
+
 fun isDeviceAdminActive(context: Context): Boolean {
     val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager ?: return false
     val admin = ComponentName(context, OtpDeviceAdminReceiver::class.java)
@@ -128,9 +137,11 @@ fun MainScreenContent(
     var selectedTab by remember { mutableStateOf(0) }
     var isMasterEnabled by remember { mutableStateOf(prefs.getBoolean("is_enabled", true)) }
     var hasNotificationAccess by remember { mutableStateOf(checkNotificationAccess(context)) }
+    var hasBatteryExemption by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
 
     LaunchedEffect(Unit) {
         hasNotificationAccess = checkNotificationAccess(context)
+        hasBatteryExemption = isIgnoringBatteryOptimizations(context)
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -192,6 +203,53 @@ fun MainScreenContent(
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                         ) {
                             Text("Enable", fontSize = 11.sp)
+                        }
+                    }
+                }
+            }
+
+            // Battery Whitelist Warning if needed
+            if (!hasBatteryExemption) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "🔋 24/7 Deep Sleep Protection",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2E7D32)
+                            )
+                            Text(
+                                text = "Phone ko raat me app freeze karne se rokein",
+                                fontSize = 10.sp,
+                                color = Color.DarkGray
+                            )
+                        }
+                        Button(
+                            onClick = {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                        data = Uri.parse("package:${context.packageName}")
+                                    }
+                                    try {
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                        context.startActivity(fallback)
+                                    }
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Text("Whitelist", fontSize = 11.sp)
                         }
                     }
                 }
