@@ -43,6 +43,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
 
 // MNC-Grade Obsidian Color Palette (Linear / Stripe Inspired)
@@ -366,6 +369,7 @@ fun MainScreenContent(
     val context = LocalContext.current
     val prefs = remember { PrefsHelper.getPrefs(context) }
     val scope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     var selectedTab by remember { mutableStateOf(0) }
     var isMasterEnabled by remember { mutableStateOf(prefs.getBoolean("is_enabled", true)) }
@@ -373,6 +377,20 @@ fun MainScreenContent(
     var hasBatteryExemption by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
     var showAdminDialog by remember { mutableStateOf(false) }
     var showHelpDialog by remember { mutableStateOf(false) }
+
+    // Instant State Refresh when returning from OS Settings
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasNotificationAccess = checkNotificationAccess(context)
+                hasBatteryExemption = isIgnoringBatteryOptimizations(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     // Cloudflare Session Verification & Trial Check
     LaunchedEffect(Unit) {
@@ -461,84 +479,97 @@ fun MainScreenContent(
                     )
                 }
 
-                // Notification Permission Warning
-                if (!hasNotificationAccess) {
+                // Compulsory 24/7 Background Running & Reader Setup Card
+                if (!hasNotificationAccess || !hasBatteryExemption) {
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF422006)),
-                        border = BorderStroke(1.dp, Color(0xFF854D0E)),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF2D1204)),
+                        border = BorderStroke(1.dp, Color(0xFFEA580C)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "⚡ Notification Access Required",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFDE047),
-                                modifier = Modifier.weight(1f)
-                            )
-                            Button(
-                                onClick = onOpenNotificationSettings,
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEAB308)),
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("⚠️ Zaroori Settings (24/7 OTP ke liye Compulsory)", fontWeight = FontWeight.ExtraBold, fontSize = 12.sp, color = Color(0xFFFDE047))
+                            }
+                            Text("Bina in settings ke phone app ko sleep kar dega aur OTP nahi aayega.", fontSize = 10.sp, color = Color(0xFFFEF08A))
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Step 1: Autostart & Battery Saver (Brand Auto-Detector)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Grant", fontSize = 11.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("1. ⚡ 24/7 Autostart & Battery", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text(
+                                        if (hasBatteryExemption) "✅ 24/7 Background Running Active" else "❌ Pending (${Build.MANUFACTURER.uppercase()} isko band kar sakta hai)",
+                                        fontSize = 10.sp,
+                                        color = if (hasBatteryExemption) Color(0xFF34D399) else Color(0xFFF87171)
+                                    )
+                                }
+                                if (!hasBatteryExemption) {
+                                    Button(
+                                        onClick = {
+                                            BrandAutoStartHelper.openAutoStartSettings(context)
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
+                                        shape = RoundedCornerShape(8.dp),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("🚀 1-Click Active", fontSize = 10.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+                                    }
+                                } else {
+                                    Text("✅ Active", fontSize = 11.sp, color = Color(0xFF34D399), fontWeight = FontWeight.Bold)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Step 2: Notification & SMS Reader Access
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("2. 🔔 Notification & SMS Reader", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text(
+                                        if (hasNotificationAccess) "✅ OTP Reader Active" else "❌ Pending (OTP nahi padh payega)",
+                                        fontSize = 10.sp,
+                                        color = if (hasNotificationAccess) Color(0xFF34D399) else Color(0xFFF87171)
+                                    )
+                                }
+                                if (!hasNotificationAccess) {
+                                    Button(
+                                        onClick = onOpenNotificationSettings,
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEAB308)),
+                                        shape = RoundedCornerShape(8.dp),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("⚙️ Allow", fontSize = 10.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+                                    }
+                                } else {
+                                    Text("✅ Active", fontSize = 11.sp, color = Color(0xFF34D399), fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }
-                }
-
-                // Battery Whitelist Warning
-                if (!hasBatteryExemption) {
+                } else {
+                    // All permissions active - Green reassurance badge
                     Card(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFF064E3B)),
-                        border = BorderStroke(1.dp, Color(0xFF047857)),
+                        border = BorderStroke(1.dp, Color(0xFF059669)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(10.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "🔋 24/7 Deep Sleep Protection",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF6EE7B7)
-                                )
-                                Text(
-                                    text = "Phone ko app sleep karne se rokein",
-                                    fontSize = 10.sp,
-                                    color = Color(0xFFA7F3D0)
-                                )
-                            }
-                            Button(
-                                onClick = {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                                            data = Uri.parse("package:${context.packageName}")
-                                        }
-                                        try {
-                                            context.startActivity(intent)
-                                        } catch (e: Exception) {
-                                            val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                                            context.startActivity(fallback)
-                                        }
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = AccentEmerald),
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                            ) {
-                                Text("Whitelist", fontSize = 11.sp, color = Color.Black, fontWeight = FontWeight.Bold)
-                            }
+                            Text("🛡️ 24/7 Deep Sleep Protected & OTP Reader Active", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6EE7B7))
+                            Text("✅ Ready", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFA7F3D0))
                         }
                     }
                 }
@@ -677,6 +708,32 @@ fun ServicesTab(
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text("Guide", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 24/7 Autostart & Deep Sleep Protection Card (Brand Auto-Detector)
+        MncCard {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("⚡ 24/7 Autostart (${Build.MANUFACTURER.uppercase()})", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFFBBF24))
+                    Text("Phone ki company ke hisab se direct Autostart settings kholein", fontSize = 11.sp, color = TextSecondary)
+                }
+                Button(
+                    onClick = {
+                        BrandAutoStartHelper.openAutoStartSettings(context)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text("Settings", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }
@@ -1069,30 +1126,53 @@ fun QuickSetupGuideDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 // Tab switcher
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Button(
                         onClick = { selectedGuideTab = 0 },
                         colors = ButtonDefaults.buttonColors(containerColor = if (selectedGuideTab == 0) AccentIndigo else Color(0xFF1E293B)),
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        modifier = Modifier.weight(1f)
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                        modifier = Modifier.weight(1.1f)
                     ) {
-                        Text("📢 Telegram", fontSize = 11.sp)
+                        Text("⚡ Autostart", fontSize = 10.sp, maxLines = 1)
                     }
                     Button(
                         onClick = { selectedGuideTab = 1 },
                         colors = ButtonDefaults.buttonColors(containerColor = if (selectedGuideTab == 1) AccentIndigo else Color(0xFF1E293B)),
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("💬 WhatsApp", fontSize = 11.sp)
+                        Text("📢 Telegram", fontSize = 10.sp, maxLines = 1)
+                    }
+                    Button(
+                        onClick = { selectedGuideTab = 2 },
+                        colors = ButtonDefaults.buttonColors(containerColor = if (selectedGuideTab == 2) AccentIndigo else Color(0xFF1E293B)),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("💬 WhatsApp", fontSize = 10.sp, maxLines = 1)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
                 if (selectedGuideTab == 0) {
+                    // Autostart Guide
+                    Text("⚡ 24/7 Autostart & Battery (Sabse Zaroori):", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFFBBF24))
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "1. Xiaomi, Vivo, Oppo, Realme aur Samsung phone me background apps 2-3 ghante baad apne aap band ho jati hain.\n" +
+                        "2. Isse bachne ke liye Dashboard par diya gaya '🚀 1-Click Active' button dabayein.\n" +
+                        "3. Ye button aapke phone ki company khud pehchan kar sidha Autostart / Battery setting page khol dega.\n" +
+                        "4. Wahan jakar Smart Notifier ko 'Autostart ON' karein aur Battery Saver ko 'No restrictions / Unrestricted / Allow' par set karein.\n\n" +
+                        "✅ Done! Iske baad phone kabhi bhi app ko band nahi karega aur 24 ghante OTP bina kisi rukawat ke forward hoga.",
+                        fontSize = 11.sp,
+                        color = TextSecondary,
+                        lineHeight = 16.sp
+                    )
+                } else if (selectedGuideTab == 1) {
                     // Telegram Guide
                     Text("📢 Telegram Bot Setup (Sirf 1 Minute):", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = AccentEmerald)
                     Spacer(modifier = Modifier.height(6.dp))
