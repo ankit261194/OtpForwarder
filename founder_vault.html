@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>👑 Smart Store - Founder PC Vault</title>
+    <title>👑 Smart Store - Founder PC Vault (AES-256 Encrypted)</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -40,7 +40,7 @@
         .btn-secondary { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
         .btn:hover { opacity: 0.9; }
         .auth-overlay { position: fixed; inset: 0; background: rgba(7, 10, 18, 0.95); display: flex; align-items: center; justify-content: center; z-index: 100; }
-        .auth-modal { background: var(--card); border: 1px solid var(--border); padding: 32px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .auth-modal { background: var(--card); border: 1px solid var(--border); padding: 32px; border-radius: 20px; width: 100%; max-width: 420px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
         .auth-input { width: 100%; padding: 12px 16px; background: #0a0f1d; border: 1px solid var(--border); border-radius: 10px; color: #fff; font-size: 14px; margin: 20px 0; outline: none; }
         .auth-input:focus { border-color: var(--accent-blue); }
     </style>
@@ -49,10 +49,10 @@
     <div id="authOverlay" class="auth-overlay">
         <div class="auth-modal">
             <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">👑 Founder Security Portal</h2>
-            <p style="font-size: 13px; color: var(--text-sec);">Enter Master Security Key to unlock Windows Softwares & Keygens</p>
+            <p style="font-size: 13px; color: var(--text-sec);">Military-Grade AES-256 Encrypted Vault. Enter Master Key to Decrypt:</p>
             <input type="password" id="passInput" class="auth-input" placeholder="Enter Master Password..." onkeydown="if(event.key==='Enter') unlockVault()">
-            <button class="btn btn-primary" style="width: 100%;" onclick="unlockVault()">Unlock Vault</button>
-            <p id="authError" style="color: #ef4444; font-size: 12px; margin-top: 12px; display: none;">Invalid Master Password. Access Denied.</p>
+            <button class="btn btn-primary" style="width: 100%;" onclick="unlockVault()">Decrypt & Unlock Vault</button>
+            <p id="authError" style="color: #ef4444; font-size: 12px; margin-top: 12px; display: none;">Invalid Master Password. Decryption Failed.</p>
         </div>
     </div>
 
@@ -61,167 +61,88 @@
             <div class="title">
                 <span>👑</span>
                 <span>Ankit Founder Vault</span>
-                <span class="badge">PC EXEs & Keygens</span>
+                <span class="badge">AES-256 GCM Live</span>
             </div>
-            <div style="font-size: 12px; color: var(--accent-emerald); font-weight: 700;">🟢 Cloud CDN Live</div>
+            <div style="font-size: 12px; color: var(--accent-emerald); font-weight: 700;">🟢 Decrypted Securely In-Memory</div>
         </div>
 
         <div class="grid" id="toolsGrid"></div>
     </div>
 
     <script>
-        const VAULT_DATA = {
-  "vaultVersion": 2,
-  "vaultName": "Ankit Executive Windows & Keygen Vault",
-  "founder": "Ankit Chaudhary",
-  "masterPasswordHash": "910010025123343",
-  "tools": [
-    {
-      "id": "daiwik-typing-tutor",
-      "name": "Daiwik Hindi/English Typing Tutor",
-      "category": "Typing & CSC",
-      "version": "4.5",
-      "sizeDisplay": "2.3 MB",
-      "description": "Bilingual government exam typing tutor. Supports Mangal (Inscript, Remington CBI, Remington GAIL) & Krutidev-010 plus English typing with real-time WPM, backspace penalty and accuracy calculation.",
-      "exeFileName": "Daiwik_Typing_Tutor_Latest_Setup.exe",
-      "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/Daiwik_Typing_Tutor_Latest_Setup.exe",
-      "hasKeygen": true,
-      "keygenFileName": "Daiwik_Keygen.exe",
-      "keygenDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/Daiwik_Keygen.exe",
-      "defaultLicenseKey": "DAIWIK-PRO-2026-UNLIMITED-LIFETIME",
-      "installationGuide": "1. Run setup.\n2. Open Daiwik_Keygen.exe to generate custom hardware keys.\n3. Or use default Master Key: DAIWIK-PRO-2026-UNLIMITED-LIFETIME"
-    },
-    {
-      "id": "ankit-automated",
-      "name": "Ankit Automated (Gmail Bill & RDP Engine)",
-      "category": "Automation & Billing",
-      "version": "2.0-VIP",
-      "sizeDisplay": "94.0 MB",
-      "description": "Commercial email invoice extractor, QuickBooks automation and RDP sync engine. Includes official KeyGenerator.exe for client machine activation.",
-      "exeFileName": "ankitautomated.exe",
-      "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/ankitautomated.exe",
-      "hasKeygen": true,
-      "keygenFileName": "KeyGenerator.exe",
-      "keygenDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/KeyGenerator.exe",
-      "defaultLicenseKey": "ANKIT-MASTER-VIP-2026",
-      "installationGuide": "1. Run ankitautomated.exe.\n2. Open KeyGenerator.exe and paste client Machine ID to generate activation key.\n3. Universal Master Key (Admin only): ANKIT-MASTER-VIP-2026"
-    },
-    {
-      "id": "mocx-pro-pc",
-      "name": "Mocx Pro Exam Platform (PC)",
-      "category": "Exam & EdTech",
-      "version": "5.2-PRO",
-      "sizeDisplay": "26.2 MB",
-      "description": "Enterprise-grade computer based examination engine for coaching institutes & schools. Anti-cheat screen lock, automatic timer, instant answer key grading.",
-      "exeFileName": "MocxPro_Setup.exe",
-      "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/MocxPro_Setup.exe",
-      "hasKeygen": true,
-      "keygenFileName": "MocxPro_Complete_Source_Payload.zip",
-      "keygenDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/MocxPro_Complete_Source_Payload.zip",
-      "defaultLicenseKey": "8MEH-RU7JQ-ACDRM-MQEPR-G3S23-FEMBR-ACED",
-      "installationGuide": "1. Run MocxPro_Setup.exe to install.\n2. Open software and paste Master Key.\n3. Complete payload zip contains raw question banks and student portal."
-    },
-    {
-      "id": "super-pc-optimizer",
-      "name": "Super PC Optimizer & RAM Booster",
-      "category": "System Utilities",
-      "version": "1.8",
-      "sizeDisplay": "0.26 MB",
-      "description": "Grand Master v16 maintenance utility. Deep registry cleanup, Windows temp purging, RAM defrag. Includes SPO_Admin_KeyGenerator for customer licensing.",
-      "exeFileName": "SuperPCOptimizer_Setup.exe",
-      "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/SuperPCOptimizer_Setup.exe",
-      "hasKeygen": true,
-      "keygenFileName": "SPO_Admin_KeyGenerator.exe",
-      "keygenDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/SPO_Admin_KeyGenerator.exe",
-      "defaultLicenseKey": "SUPER-PC-CLEANER-PRO",
-      "installationGuide": "1. Run setup.\n2. Open SPO_Admin_KeyGenerator.exe, paste customer Machine ID to create 1-Year or Lifetime Key.\n3. Master Key: SUPER-PC-CLEANER-PRO"
-    },
-    {
-      "id": "pharma-pos-keygen-suite",
-      "name": "Pharma POS Enterprise Keygen Suite",
-      "category": "Business & Keygens",
-      "version": "1.0",
-      "sizeDisplay": "31.1 MB",
-      "description": "Dedicated cryptographic key generator for Pharma POS billing software. Generates hardware-locked retail terminal licenses.",
-      "exeFileName": "PharmaPOS_Keygen.exe",
-      "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/PharmaPOS_Keygen.exe",
-      "hasKeygen": true,
-      "keygenFileName": "PharmaPOS_Keygen.exe",
-      "keygenDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/PharmaPOS_Keygen.exe",
-      "defaultLicenseKey": "PHARMA-ENTERPRISE-FOUNDER-ACTIVATED",
-      "installationGuide": "1. Open PharmaPOS_Keygen.exe.\n2. Select hardware node and click Generate.\n3. Master Key: PHARMA-ENTERPRISE-FOUNDER-ACTIVATED"
-    },
-    {
-      "id": "ankitgravity-ide",
-      "name": "AnkitGravity AI IDE Desktop",
-      "category": "AI Development",
-      "version": "12.5",
-      "sizeDisplay": "12.8 MB",
-      "description": "Executive AI Development Studio with integrated Antigravity engine, multi-agent terminal orchestrator, live git synchronization, and scratch workspace builder.",
-      "exeFileName": "AnkitGravity-Setup.exe",
-      "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/AnkitGravity-Setup.exe",
-      "hasKeygen": false,
-      "keygenFileName": "",
-      "keygenDownloadUrl": "",
-      "defaultLicenseKey": "ANKIT-GRAVITY-ENTERPRISE-TOKEN-AUTH",
-      "installationGuide": "1. Run setup.\n2. Select workspace directory.\n3. Automatic Antigravity CLI and model binding initialized."
-    },
-    {
-      "id": "antigravity-quota-monitor",
-      "name": "Antigravity Quota Monitor Pro",
-      "category": "System Utilities",
-      "version": "2.1",
-      "sizeDisplay": "31.4 MB",
-      "description": "Windows system tray floating monitor tracking live AI quota, rate limits, token consumption, and background task diagnostics across active agent sessions.",
-      "exeFileName": "AntigravityQuotaMonitor.exe",
-      "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/AntigravityQuotaMonitor.exe",
-      "hasKeygen": false,
-      "keygenFileName": "",
-      "keygenDownloadUrl": "",
-      "defaultLicenseKey": "PERPETUAL-FOUNDER-LICENSE",
-      "installationGuide": "1. Double click to run.\n2. Minimizes to system tray near clock.\n3. Right click for live quota stats."
-    },
-    {
-      "id": "apex-erp",
-      "name": "Apex ERP Enterprise Retail",
-      "category": "Business & Accounting",
-      "version": "3.0",
-      "sizeDisplay": "0.3 MB",
-      "description": "Ultra fast portable desktop retail ERP. POS thermal invoice printing, GST billing, inventory stock warnings, barcode scanning, and daily cash drawer reconciliation.",
-      "exeFileName": "ApexERP-Setup.exe",
-      "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/ApexERP-Setup.exe",
-      "hasKeygen": true,
-      "keygenFileName": "",
-      "keygenDownloadUrl": "",
-      "defaultLicenseKey": "APEX-ERP-UNLIMITED-NODE-AUTH",
-      "installationGuide": "1. Run setup.\n2. Configure company details and GSTIN.\n3. Ready for offline billing."
-    },
-    {
-      "id": "virtual-keyboard-engine",
-      "name": "Virtual On-Screen Keyboard Engine",
-      "category": "System Utilities",
-      "version": "1.0",
-      "sizeDisplay": "0.54 MB",
-      "description": "Hardware level transparent floating on-screen keyboard. Designed for touch terminals, kiosks, CSC typing, and physical keyboard failure fallback.",
-      "exeFileName": "KEYBOARD.EXE",
-      "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/KEYBOARD.EXE",
-      "hasKeygen": false,
-      "keygenFileName": "",
-      "keygenDownloadUrl": "",
-      "defaultLicenseKey": "FREE-STANDALONE",
-      "installationGuide": "1. Direct standalone portable executable.\n2. No installation required. Runs anywhere."
-    }
-  ]
-};
+        const EMBEDDED_CIPHER = "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";
+        let VAULT_DATA = null;
 
-        function unlockVault() {
+        async function decryptPayload(b64, password) {
+            const binary = atob(b64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+            const salt = bytes.slice(0, 16);
+            const iv = bytes.slice(16, 28);
+            const ciphertext = bytes.slice(28);
+
+            const enc = new TextEncoder();
+            const keyMaterial = await window.crypto.subtle.importKey(
+                "raw",
+                enc.encode(password),
+                { name: "PBKDF2" },
+                false,
+                ["deriveKey"]
+            );
+
+            const key = await window.crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: salt,
+                    iterations: 65536,
+                    hash: "SHA-256"
+                },
+                keyMaterial,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["decrypt"]
+            );
+
+            const decrypted = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                ciphertext
+            );
+
+            return JSON.parse(new TextDecoder().decode(decrypted));
+        }
+
+        async function unlockVault() {
             const pass = document.getElementById('passInput').value.trim();
-            if (pass === VAULT_DATA.masterPasswordHash) {
+            const err = document.getElementById('authError');
+            err.style.display = 'none';
+
+            if (!pass) {
+                err.textContent = "Please enter Master Password.";
+                err.style.display = 'block';
+                return;
+            }
+
+            let cipherToUse = EMBEDDED_CIPHER;
+            try {
+                const res = await fetch("https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/admin_vault.enc?t=" + Date.now());
+                if (res.ok) {
+                    const text = await res.text();
+                    if (text && text.length > 50) cipherToUse = text.trim();
+                }
+            } catch (e) {
+                console.warn("Using offline embedded encrypted vault");
+            }
+
+            try {
+                VAULT_DATA = await decryptPayload(cipherToUse, pass);
                 document.getElementById('authOverlay').style.display = 'none';
                 document.getElementById('mainContent').style.display = 'block';
                 renderTools();
-            } else {
-                document.getElementById('authError').style.display = 'block';
+            } catch (e) {
+                err.textContent = "Invalid Master Password or Decryption Failed.";
+                err.style.display = 'block';
             }
         }
 
