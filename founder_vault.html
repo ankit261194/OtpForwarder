@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👑 Smart Store - Founder PC Vault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #070A12;
+            --card: #111827;
+            --surface: #1E293B;
+            --border: #1E2C4A;
+            --accent-blue: #3B82F6;
+            --accent-indigo: #6366F1;
+            --accent-emerald: #10B981;
+            --accent-amber: #F59E0B;
+            --text-pri: #FFFFFF;
+            --text-sec: #94A3B8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text-pri); min-height: 100vh; padding: 24px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 24px; }
+        .title { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 800; }
+        .badge { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid var(--accent-blue); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; transition: transform 0.2s, border-color 0.2s; display: flex; flex-direction: column; justify-content: space-between; }
+        .card:hover { transform: translateY(-3px); border-color: var(--accent-blue); }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .card-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .card-cat { font-size: 11px; color: var(--accent-indigo); background: #1e1b4b; padding: 2px 8px; border-radius: 6px; font-weight: 600; display: inline-block; margin-bottom: 8px; }
+        .card-desc { font-size: 12px; color: var(--text-sec); line-height: 1.5; margin-bottom: 16px; }
+        .key-box { background: #0c1017; border: 1px dashed #334155; border-radius: 8px; padding: 10px; margin-bottom: 14px; }
+        .key-label { font-size: 10px; color: var(--accent-amber); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .key-text { font-family: monospace; font-size: 12px; color: #38bdf8; word-break: break-all; }
+        .btn-group { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; border: none; display: inline-block; }
+        .btn-primary { background: linear-gradient(135deg, #4f46e5, #06b6d4); color: #fff; }
+        .btn-secondary { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+        .btn:hover { opacity: 0.9; }
+        .auth-overlay { position: fixed; inset: 0; background: rgba(7, 10, 18, 0.95); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .auth-modal { background: var(--card); border: 1px solid var(--border); padding: 32px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .auth-input { width: 100%; padding: 12px 16px; background: #0a0f1d; border: 1px solid var(--border); border-radius: 10px; color: #fff; font-size: 14px; margin: 20px 0; outline: none; }
+        .auth-input:focus { border-color: var(--accent-blue); }
+    </style>
+</head>
+<body>
+    <div id="authOverlay" class="auth-overlay">
+        <div class="auth-modal">
+            <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">👑 Founder Security Portal</h2>
+            <p style="font-size: 13px; color: var(--text-sec);">Enter Master Security Key to unlock Windows Softwares & Keygens</p>
+            <input type="password" id="passInput" class="auth-input" placeholder="Enter Master Password..." onkeydown="if(event.key==='Enter') unlockVault()">
+            <button class="btn btn-primary" style="width: 100%;" onclick="unlockVault()">Unlock Vault</button>
+            <p id="authError" style="color: #ef4444; font-size: 12px; margin-top: 12px; display: none;">Invalid Master Password. Access Denied.</p>
+        </div>
+    </div>
+
+    <div class="container" id="mainContent" style="display: none;">
+        <div class="header">
+            <div class="title">
+                <span>👑</span>
+                <span>Ankit Founder Vault</span>
+                <span class="badge">PC EXEs & Keygens</span>
+            </div>
+            <div style="font-size: 12px; color: var(--accent-emerald); font-weight: 700;">🟢 Cloud CDN Live</div>
+        </div>
+
+        <div class="grid" id="toolsGrid"></div>
+    </div>
+
+    <script>
+        const VAULT_DATA = {"vaultVersion": 1, "vaultName": "Ankit Executive Windows & Keygen Vault", "founder": "Ankit Chaudhary", "masterPasswordHash": "910010025123343", "tools": [{"id": "mocx-pro-pc", "name": "Mocx Pro Exam Platform (PC)", "category": "Exam & EdTech", "version": "5.2-PRO", "sizeDisplay": "26.2 MB", "description": "Enterprise-grade computer based examination engine for coaching institutes & schools. Anti-cheat screen lock, automatic timer, instant answer key grading.", "exeFileName": "MocxPro_Setup.exe", "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/MocxPro_Setup.exe", "hasKeygen": true, "keygenFileName": "MocxPro_Complete_Source_Payload.zip", "keygenDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/MocxPro_Complete_Source_Payload.zip", "defaultLicenseKey": "8MEH-RU7JQ-ACDRM-MQEPR-G3S23-FEMBR-ACED", "installationGuide": "1. Run MocxPro_Setup.exe to install.\n2. Open software and paste Master Key.\n3. Complete payload zip contains raw question banks and student portal."}, {"id": "daiwik-typing-tutor", "name": "Daiwik Hindi/English Typing Tutor", "category": "Typing & CSC", "version": "4.5", "sizeDisplay": "2.3 MB", "description": "Bilingual government exam typing tutor. Supports Mangal (Inscript, Remington CBI, Remington GAIL) & Krutidev-010 plus English typing with real-time WPM, backspace penalty and accuracy calculation.", "exeFileName": "Daiwik_Typing_Tutor_Latest_Setup.exe", "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/Daiwik_Typing_Tutor_Latest_Setup.exe", "hasKeygen": true, "keygenFileName": "", "keygenDownloadUrl": "", "defaultLicenseKey": "DAIWIK-PRO-2026-UNLIMITED-LIFETIME", "installationGuide": "1. Run setup.\n2. Choose font (Mangal or Krutidev).\n3. Lifetime full access unlocked."}, {"id": "ankitgravity-ide", "name": "AnkitGravity AI IDE Desktop", "category": "AI Development", "version": "12.5", "sizeDisplay": "12.8 MB", "description": "Executive AI Development Studio with integrated Antigravity engine, multi-agent terminal orchestrator, live git synchronization, and scratch workspace builder.", "exeFileName": "AnkitGravity-Setup.exe", "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/AnkitGravity-Setup.exe", "hasKeygen": false, "keygenFileName": "", "keygenDownloadUrl": "", "defaultLicenseKey": "ANKIT-GRAVITY-ENTERPRISE-TOKEN-AUTH", "installationGuide": "1. Run setup.\n2. Select workspace directory.\n3. Automatic Antigravity CLI and model binding initialized."}, {"id": "antigravity-quota-monitor", "name": "Antigravity Quota Monitor Pro", "category": "System Utilities", "version": "2.1", "sizeDisplay": "31.4 MB", "description": "Windows system tray floating monitor tracking live AI quota, rate limits, token consumption, and background task diagnostics across active agent sessions.", "exeFileName": "AntigravityQuotaMonitor.exe", "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/AntigravityQuotaMonitor.exe", "hasKeygen": false, "keygenFileName": "", "keygenDownloadUrl": "", "defaultLicenseKey": "PERPETUAL-FOUNDER-LICENSE", "installationGuide": "1. Double click to run.\n2. Minimizes to system tray near clock.\n3. Right click for live quota stats."}, {"id": "apex-erp", "name": "Apex ERP Enterprise Retail", "category": "Business & Accounting", "version": "3.0", "sizeDisplay": "0.3 MB", "description": "Ultra fast portable desktop retail ERP. POS thermal invoice printing, GST billing, inventory stock warnings, barcode scanning, and daily cash drawer reconciliation.", "exeFileName": "ApexERP-Setup.exe", "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/ApexERP-Setup.exe", "hasKeygen": true, "keygenFileName": "", "keygenDownloadUrl": "", "defaultLicenseKey": "APEX-ERP-UNLIMITED-NODE-AUTH", "installationGuide": "1. Run setup.\n2. Configure company details and GSTIN.\n3. Ready for offline billing."}, {"id": "super-pc-optimizer", "name": "Super PC Optimizer & Cleaner", "category": "System Utilities", "version": "1.8", "sizeDisplay": "0.26 MB", "description": "Featherweight Windows PC maintenance utility. Deep registry cleanup, Windows temp purging, RAM defragmentation, and startup apps speed boost in under 300 KB.", "exeFileName": "SuperPCOptimizer_Setup.exe", "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/SuperPCOptimizer_Setup.exe", "hasKeygen": false, "keygenFileName": "", "keygenDownloadUrl": "", "defaultLicenseKey": "SUPER-PC-CLEANER-PRO", "installationGuide": "1. Run setup.\n2. Click 'One-Click Boost'.\n3. Restores peak PC performance."}, {"id": "virtual-keyboard-engine", "name": "Virtual On-Screen Keyboard Engine", "category": "System Utilities", "version": "1.0", "sizeDisplay": "0.54 MB", "description": "Hardware level transparent floating on-screen keyboard. Designed for touch terminals, kiosks, CSC typing, and physical keyboard failure fallback.", "exeFileName": "KEYBOARD.EXE", "exeDownloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/KEYBOARD.EXE", "hasKeygen": false, "keygenFileName": "", "keygenDownloadUrl": "", "defaultLicenseKey": "FREE-STANDALONE", "installationGuide": "1. Direct standalone portable executable.\n2. No installation required. Runs anywhere."}]};
+
+        function unlockVault() {
+            const pass = document.getElementById('passInput').value.trim();
+            if (pass === VAULT_DATA.masterPasswordHash) {
+                document.getElementById('authOverlay').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                renderTools();
+            } else {
+                document.getElementById('authError').style.display = 'block';
+            }
+        }
+
+        function copyKey(key) {
+            navigator.clipboard.writeText(key);
+            alert('License Key Copied: ' + key);
+        }
+
+        function renderTools() {
+            const grid = document.getElementById('toolsGrid');
+            grid.innerHTML = '';
+            VAULT_DATA.tools.forEach(t => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div>
+                        <div class="card-top">
+                            <div>
+                                <span class="card-cat">${t.category}</span>
+                                <h3 class="card-title">${t.name}</h3>
+                                <div style="font-size: 11px; color: var(--text-sec);">v${t.version} • ${t.sizeDisplay}</div>
+                            </div>
+                        </div>
+                        <p class="card-desc">${t.description}</p>
+                        ${t.defaultLicenseKey ? `
+                            <div class="key-box">
+                                <div class="key-label">
+                                    <span>Master License Key / Serial</span>
+                                    <span style="cursor:pointer; color: var(--accent-blue);" onclick="copyKey('${t.defaultLicenseKey}')">📋 Copy</span>
+                                </div>
+                                <div class="key-text">${t.defaultLicenseKey}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="btn-group">
+                        <a href="${t.exeDownloadUrl}" target="_blank" class="btn btn-primary">⬇ Download Setup</a>
+                        ${t.hasKeygen && t.keygenDownloadUrl ? `
+                            <a href="${t.keygenDownloadUrl}" target="_blank" class="btn btn-secondary">🔑 Keygen / Zip</a>
+                        ` : ''}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
