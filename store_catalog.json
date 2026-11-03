@@ -1,47 +1,151 @@
 {
-  "storeVersion": 1,
-  "storeVersionName": "1.0",
-  "storeApkUrl": "https://github.com/ankit261194/OtpForwarder/raw/main/release_apk/Smart_Store.apk",
-  "storeChangelog": "Initial Release: MNC Obsidian UI, Multi-Threaded Buffered Downloader, PackageInstaller Integration, 1-Click Permissions Doctor",
+  "storeVersion": 2,
+  "storeVersionName": "2.0",
+  "storeApkUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/Smart_Store.apk",
+  "storeChangelog": "Grand Ecosystem Upgrade: Complete Royal Sapphire UI Redesign, All 11 Ankit Flagship Apps Ingested, 1-Click Drag-and-Drop Desktop Publisher",
   "categories": [
     "All Apps",
-    "OTP Tools",
-    "eDistrict",
-    "VIP Utilities"
+    "VIP Video & TV",
+    "Security & SMS",
+    "IoT & Automation",
+    "Tools & Utilities",
+    "Devotional & Community"
   ],
   "featuredAppIds": [
-    "smart-notifier"
+    "ankittube-vip",
+    "smart-notifier",
+    "ankit-elevex",
+    "ankit-tv"
   ],
   "apps": [
+    {
+      "id": "ankittube-vip",
+      "packageName": "app.morphe.android.youtube",
+      "name": "AnkitTube VIP",
+      "tagline": "Ad-Free YouTube VIP, 4K HDR & Background Audio",
+      "description": "Ultimate YouTube experience with SponsorBlock, Return YouTube Dislike, zero video/banner ads, background playback, PiP mode, and customized themes with executive VIP branding.",
+      "versionName": "21.23.492",
+      "versionCode": 1561177001,
+      "sizeBytes": 143640514,
+      "sizeDisplay": "137.0 MB",
+      "category": "VIP Video & TV",
+      "rating": 5.0,
+      "downloadsCount": "10,000+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/app_morphe_android_youtube.png",
+      "bannerUrl": "",
+      "downloadUrl": "https://github.com/ankit261194/AnkitTube/releases/download/v1.0.0/AnkitTube-Official.apk",
+      "sha256": "",
+      "isFeatured": true,
+      "isVip": true,
+      "changelog": [
+        "100% Ad-Free YouTube video & audio streaming",
+        "SponsorBlock & Return YouTube Dislike built-in",
+        "Background audio & Picture-in-Picture (PiP) enabled",
+        "Requires AnkitTube microG Services for Google Account login"
+      ],
+      "screenshots": [],
+      "permissionsNeeded": [
+        {
+          "title": "Internet Access",
+          "description": "Required for streaming high definition video and audio",
+          "type": "INTERNET",
+          "isMandatory": true
+        }
+      ]
+    },
+    {
+      "id": "ankittube-microg",
+      "packageName": "app.revanced.android.gms",
+      "name": "AnkitTube microG Services",
+      "tagline": "Core Google Sync & Push Services for AnkitTube",
+      "description": "Essential background microG subsystem enabling seamless Google Sign-In, subscriptions, playlists, and push notifications for AnkitTube.",
+      "versionName": "0.3.13.2.250932-hw",
+      "versionCode": 250932004,
+      "sizeBytes": 105543571,
+      "sizeDisplay": "100.7 MB",
+      "category": "VIP Video & TV",
+      "rating": 4.9,
+      "downloadsCount": "10,000+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/app_revanced_android_gms.png",
+      "bannerUrl": "",
+      "downloadUrl": "https://github.com/ankit261194/AnkitTube/releases/download/v1.0.0/AnkitTube-Core-Plugin.apk",
+      "sha256": "",
+      "isFeatured": false,
+      "isVip": true,
+      "changelog": [
+        "Clean microG architecture for Google auth synchronization",
+        "Push notifications listener support",
+        "Battery Saver exemption bridge"
+      ],
+      "screenshots": [],
+      "permissionsNeeded": [
+        {
+          "title": "Autostart & Battery Exemption",
+          "description": "Keeps Google synchronization alive for video notifications",
+          "type": "BATTERY_OPTIMIZATION",
+          "isMandatory": true
+        }
+      ]
+    },
+    {
+      "id": "ankit-tv",
+      "packageName": "org.ankittv.stable",
+      "name": "Ankit TV",
+      "tagline": "Android TV & Smart Box YouTube VIP 4K",
+      "description": "Dedicated Android TV client for smart TVs, FireTV sticks, and set-top boxes. Features D-pad remote navigation, 4K 60FPS AV1 streaming, multi-account switcher, and zero commercials.",
+      "versionName": "32.64",
+      "versionCode": 2454,
+      "sizeBytes": 30212993,
+      "sizeDisplay": "28.8 MB",
+      "category": "VIP Video & TV",
+      "rating": 4.9,
+      "downloadsCount": "4,500+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/org_ankittv_stable.png",
+      "bannerUrl": "",
+      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/AnkitTV_stable_32.64_arm64-v8a.apk",
+      "sha256": "",
+      "isFeatured": true,
+      "isVip": true,
+      "changelog": [
+        "Android TV D-pad remote controller acceleration",
+        "4K 60fps AV1 and VP9 codec support",
+        "SponsorBlock automatic commercial skipping"
+      ],
+      "screenshots": [],
+      "permissionsNeeded": [
+        {
+          "title": "Internet Access",
+          "description": "Stream high-definition 4K TV content",
+          "type": "INTERNET",
+          "isMandatory": true
+        }
+      ]
+    },
     {
       "id": "smart-notifier",
       "packageName": "com.smartnotifier.app",
       "name": "Smart Notifier",
       "tagline": "24/7 Ghost OTP & Notification Forwarder",
-      "description": "Smart Notifier automates SMS, Banking, and eDistrict OTP forwarding to Telegram and WhatsApp in real-time. Features 100% ghost stealth, battery optimization exemption, zero delay, and direct boot awareness.",
+      "description": "Automates SMS, Banking, and eDistrict OTP forwarding to Telegram and WhatsApp in real-time. Features 100% ghost stealth, battery optimization exemption, zero delay, and direct boot awareness.",
       "versionName": "4.7",
       "versionCode": 7,
       "sizeBytes": 8249161,
       "sizeDisplay": "7.9 MB",
-      "category": "OTP Tools",
+      "category": "Security & SMS",
       "rating": 4.9,
       "downloadsCount": "5,000+",
-      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/smart_notifier_icon.png",
-      "bannerUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/smart_notifier_banner.png",
-      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/raw/main/release_apk/Smart_Notifier.apk",
-      "sha256": "2545719a12678bcddb7d687b1acbc68589b1b55075a125bb980c31a33d9f21d4",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_smartnotifier_app.png",
+      "bannerUrl": "",
+      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/Smart_Notifier.apk",
+      "sha256": "",
       "isFeatured": true,
       "isVip": false,
       "changelog": [
         "Zero Play Protect block with fresh clean certificate",
-        "Clean Activity-Alias icon hiding with customer dialer code",
-        "Android 13/14 Restricted Settings 1-click unlock button",
-        "Full-Screen Executive Founder Console"
+        "Clean dialer code stealth activation",
+        "Android 13/14 Restricted Settings 1-click unlock button"
       ],
-      "screenshots": [
-        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/screen1.png",
-        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/screen2.png"
-      ],
+      "screenshots": [],
       "permissionsNeeded": [
         {
           "title": "Notification Access",
@@ -57,41 +161,245 @@
         },
         {
           "title": "Restricted Settings (Android 13/14)",
-          "description": "Unlocks greyed-out Notification switches on Android 13/14 via App Info 3-dots",
+          "description": "Unlocks greyed-out Notification switches on Android 13/14",
           "type": "RESTRICTED_SETTINGS",
           "isMandatory": false
         }
       ]
     },
     {
-      "id": "edistrict-helper",
-      "packageName": "com.smartnotifier.edistrict",
-      "name": "eDistrict UP Auto Portal",
-      "tagline": "Citizen & CSC Fast Login Assistant",
-      "description": "Automated session assistant and OTP filler for UP eDistrict portal and Citizen services. Integrates directly with Smart Notifier for hands-free verification.",
-      "versionName": "2.1",
-      "versionCode": 3,
-      "sizeBytes": 6124500,
-      "sizeDisplay": "5.8 MB",
-      "category": "eDistrict",
+      "id": "edistrict-otp",
+      "packageName": "com.example.otpforwarder",
+      "name": "eDistrict UP SMS Gateway",
+      "tagline": "Government & eDistrict Citizen OTP Bridge",
+      "description": "High reliability SMS listener for UP eDistrict citizen logins and CSC portals. Auto-detects 6-digit OTP codes and broadcasts directly to private Telegram bot.",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "sizeBytes": 8118853,
+      "sizeDisplay": "7.7 MB",
+      "category": "Security & SMS",
       "rating": 4.8,
-      "downloadsCount": "2,400+",
-      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/edistrict_icon.png",
-      "bannerUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/edistrict_banner.png",
-      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/raw/main/release_apk/eDistrict_OTP_Forwarder.apk",
+      "downloadsCount": "2,800+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_example_otpforwarder.png",
+      "bannerUrl": "",
+      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/eDistrict_OTP_Forwarder.apk",
       "sha256": "",
       "isFeatured": false,
       "isVip": false,
       "changelog": [
-        "Fast captcha assist",
-        "Direct bridge to Smart Notifier",
-        "Offline certificate verification tool"
+        "Real-time SMS interception engine",
+        "Encrypted Telegram bot webhook relay",
+        "Background persistent service"
+      ],
+      "screenshots": [],
+      "permissionsNeeded": [
+        {
+          "title": "Battery Optimization Exemption",
+          "description": "Keeps SMS forwarder running 24/7",
+          "type": "BATTERY_OPTIMIZATION",
+          "isMandatory": true
+        }
+      ]
+    },
+    {
+      "id": "pluxy-messenger",
+      "packageName": "com.aegis.messenger.debug",
+      "name": "Pluxy Messenger",
+      "tagline": "Encrypted Private Chat & Secret Channels",
+      "description": "Ultra-secure private messenger with zero-knowledge cryptography, biometric lock, ephemeral self-destructing messages, and custom push relays.",
+      "versionName": "2.5.0",
+      "versionCode": 7,
+      "sizeBytes": 16862458,
+      "sizeDisplay": "16.1 MB",
+      "category": "Security & SMS",
+      "rating": 4.9,
+      "downloadsCount": "3,200+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_aegis_messenger_debug.png",
+      "bannerUrl": "",
+      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/Pluxy.apk",
+      "sha256": "",
+      "isFeatured": false,
+      "isVip": true,
+      "changelog": [
+        "End-to-End Encryption protocol v2",
+        "Biometric fingerprint/face unlock vault",
+        "Self-destructing message timer"
       ],
       "screenshots": [],
       "permissionsNeeded": [
         {
           "title": "Internet Access",
-          "description": "Required for eDistrict portal status queries",
+          "description": "Send and receive encrypted chats",
+          "type": "INTERNET",
+          "isMandatory": true
+        }
+      ]
+    },
+    {
+      "id": "ankit-elevex",
+      "packageName": "com.ankit.liftramban.ankits_lift_ramban_ai",
+      "name": "Ankit EleveX IoT",
+      "tagline": "Smart Lift & Industrial Hardware Controller",
+      "description": "Industrial telemetry console with Bluetooth LE hardware link, real-time CAN bus telemetry, fault code diagnosis, and automated emergency technician dispatch.",
+      "versionName": "5.9.41",
+      "versionCode": 631,
+      "sizeBytes": 41412549,
+      "sizeDisplay": "39.5 MB",
+      "category": "IoT & Automation",
+      "rating": 5.0,
+      "downloadsCount": "1,500+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_ankit_liftramban_ankits_lift_ramban_ai.png",
+      "bannerUrl": "",
+      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/Ankit_EleveX_v5.9.41_Final.apk",
+      "sha256": "",
+      "isFeatured": true,
+      "isVip": true,
+      "changelog": [
+        "BLE 5.2 hardware auto-discovery & pairing",
+        "Real-time elevator safety parameters monitoring",
+        "Emergency alert dispatch with live geolocation"
+      ],
+      "screenshots": [],
+      "permissionsNeeded": [
+        {
+          "title": "Battery Optimization",
+          "description": "Maintains Bluetooth telemetry connection in background",
+          "type": "BATTERY_OPTIMIZATION",
+          "isMandatory": true
+        }
+      ]
+    },
+    {
+      "id": "docuedit-pro",
+      "packageName": "com.docu.editor",
+      "name": "DocuEdit Pro Scanner",
+      "tagline": "AI Document Scanner, OCR & PDF Engine",
+      "description": "Professional high-resolution document scanner with automatic edge detection, multi-page batch scanning, optical character recognition (OCR), and digital PDF signing.",
+      "versionName": "10.9.10",
+      "versionCode": 66,
+      "sizeBytes": 105450359,
+      "sizeDisplay": "100.6 MB",
+      "category": "Tools & Utilities",
+      "rating": 4.8,
+      "downloadsCount": "7,800+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_docu_editor.png",
+      "bannerUrl": "",
+      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/DocuEdit-v10.9.10-arm64.apk",
+      "sha256": "",
+      "isFeatured": false,
+      "isVip": false,
+      "changelog": [
+        "Smart edge detection camera algorithm",
+        "High-accuracy offline multilingual OCR engine",
+        "Export encrypted multi-page PDFs"
+      ],
+      "screenshots": [],
+      "permissionsNeeded": [
+        {
+          "title": "Camera & Storage",
+          "description": "Document capture and local PDF saving",
+          "type": "INTERNET",
+          "isMandatory": true
+        }
+      ]
+    },
+    {
+      "id": "smart-cyber-cafe",
+      "packageName": "com.cybercafe.portal",
+      "name": "Smart Cyber Cafe",
+      "tagline": "CSC & Cyber Cafe Operations Hub",
+      "description": "Complete business operations suite for Indian CSCs and online service centers. Track customer applications, pending government services, print queues, and fee ledgers.",
+      "versionName": "2.0.0",
+      "versionCode": 2,
+      "sizeBytes": 46833598,
+      "sizeDisplay": "44.7 MB",
+      "category": "Tools & Utilities",
+      "rating": 4.9,
+      "downloadsCount": "1,900+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_cybercafe_portal.png",
+      "bannerUrl": "",
+      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/CyberCafe_Portal.apk",
+      "sha256": "",
+      "isFeatured": false,
+      "isVip": false,
+      "changelog": [
+        "Customer entry management system",
+        "Instant thermal receipt generation",
+        "Government scheme portal links hub"
+      ],
+      "screenshots": [],
+      "permissionsNeeded": [
+        {
+          "title": "Internet Access",
+          "description": "Sync customer records and scheme updates",
+          "type": "INTERNET",
+          "isMandatory": true
+        }
+      ]
+    },
+    {
+      "id": "mocx-pro",
+      "packageName": "com.mocxpro.app",
+      "name": "Mocx Pro Exam Suite",
+      "tagline": "Ultra Lightweight Exam & Mock Test Platform",
+      "description": "Lightning fast competitive exam preparation app. Includes thousands of mock questions, timed test simulations, negative marking calculators, and offline study materials in just 1.4 MB.",
+      "versionName": "5.2-PRO",
+      "versionCode": 520,
+      "sizeBytes": 1504061,
+      "sizeDisplay": "1.4 MB",
+      "category": "Tools & Utilities",
+      "rating": 4.9,
+      "downloadsCount": "6,200+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_mocxpro_app.png",
+      "bannerUrl": "",
+      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/MocxPro.apk",
+      "sha256": "",
+      "isFeatured": false,
+      "isVip": false,
+      "changelog": [
+        "1.4 MB featherweight footprint",
+        "Full offline test bank sync",
+        "Instant score analytics and answer keys"
+      ],
+      "screenshots": [],
+      "permissionsNeeded": [
+        {
+          "title": "Internet Access",
+          "description": "Download question sets and leaderboard results",
+          "type": "INTERNET",
+          "isMandatory": true
+        }
+      ]
+    },
+    {
+      "id": "shri-balaji-kripa-dham",
+      "packageName": "com.example.shribalajikripadham",
+      "name": "Shri Balaji Kripa Dham",
+      "tagline": "Live Darshan, Aarti, Bhajans & Temple Seva",
+      "description": "Official temple application. Offers 24/7 Live Darshan HD streaming, morning/evening Aarti player with synchronized lyrics, Hindu Panchang calendar, and spiritual community services.",
+      "versionName": "2.80.0",
+      "versionCode": 167,
+      "sizeBytes": 84769344,
+      "sizeDisplay": "80.8 MB",
+      "category": "Devotional & Community",
+      "rating": 5.0,
+      "downloadsCount": "8,500+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_example_shribalajikripadham.png",
+      "bannerUrl": "",
+      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/ShriBalajiKripaDham-release.apk",
+      "sha256": "",
+      "isFeatured": false,
+      "isVip": false,
+      "changelog": [
+        "24/7 Live HD Darshan player",
+        "Offline morning and evening Aarti audio",
+        "Daily Hindu Panchang and festival notifications"
+      ],
+      "screenshots": [],
+      "permissionsNeeded": [
+        {
+          "title": "Internet Access",
+          "description": "Stream live Darshan audio and video",
           "type": "INTERNET",
           "isMandatory": true
         }
