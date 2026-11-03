@@ -1,6 +1,6 @@
 {
-  "storeVersion": 2,
-  "storeVersionName": "2.0",
+  "storeVersion": 3,
+  "storeVersionName": "2.3",
   "storeApkUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/Smart_Store.apk",
   "storeChangelog": "Grand Ecosystem Upgrade: Complete Royal Sapphire UI Redesign, All 11 Ankit Flagship Apps Ingested, 1-Click Drag-and-Drop Desktop Publisher",
   "categories": [
@@ -338,9 +338,9 @@
       ]
     },
     {
-      "id": "mocx-pro",
+      "id": "com-mocxpro-app",
       "packageName": "com.mocxpro.app",
-      "name": "Mocx Pro Exam Suite",
+      "name": "Mocx Pro",
       "tagline": "Ultra Lightweight Exam & Mock Test Platform",
       "description": "Lightning fast competitive exam preparation app. Includes thousands of mock questions, timed test simulations, negative marking calculators, and offline study materials in just 1.4 MB.",
       "versionName": "5.2-PRO",
@@ -348,8 +348,8 @@
       "sizeBytes": 1504061,
       "sizeDisplay": "1.4 MB",
       "category": "Tools & Utilities",
-      "rating": 4.9,
-      "downloadsCount": "6,200+",
+      "rating": 5.0,
+      "downloadsCount": "1,000+",
       "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_mocxpro_app.png",
       "bannerUrl": "",
       "downloadUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/MocxPro.apk",
@@ -357,15 +357,13 @@
       "isFeatured": false,
       "isVip": false,
       "changelog": [
-        "1.4 MB featherweight footprint",
-        "Full offline test bank sync",
-        "Instant score analytics and answer keys"
+        "Updated to version 5.2-PRO"
       ],
       "screenshots": [],
       "permissionsNeeded": [
         {
           "title": "Internet Access",
-          "description": "Download question sets and leaderboard results",
+          "description": "Required for application network communication",
           "type": "INTERNET",
           "isMandatory": true
         }
