@@ -1,8 +1,8 @@
 {
-  "storeVersion": 4,
-  "storeVersionName": "2.4",
+  "storeVersion": 5,
+  "storeVersionName": "2.5",
   "storeApkUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/Smart_Store.apk",
-  "storeChangelog": "Grand Ecosystem Upgrade: Complete Royal Sapphire UI Redesign, All 11 Ankit Flagship Apps Ingested, 1-Click Drag-and-Drop Desktop Publisher",
+  "storeChangelog": "Enterprise Upgrade v2.5: Resumable Range HTTP Downloader, AES-256 GCM Founder Vault, WorkManager Background Auto-Updater, Smart Tag Search, Media Screenshot Showcase & Direct UPI Commercial Billing.",
   "categories": [
     "All Apps",
     "VIP Video & TV",
@@ -43,7 +43,9 @@
         "Background audio & Picture-in-Picture (PiP) enabled",
         "Requires AnkitTube microG Services for Google Account login"
       ],
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/app_morphe_android_youtube.png"
+      ],
       "permissionsNeeded": [
         {
           "title": "Internet Access",
@@ -51,7 +53,21 @@
           "type": "INTERNET",
           "isMandatory": true
         }
-      ]
+      ],
+      "tags": [
+        "youtube",
+        "adfree",
+        "sponsorblock",
+        "background",
+        "4k",
+        "pip",
+        "music",
+        "video"
+      ],
+      "developerName": "Ankit VIP Labs",
+      "isPaid": false,
+      "priceInr": 0,
+      "supportUpi": "ankit261194@okaxis"
     },
     {
       "id": "ankittube-microg",
@@ -77,7 +93,9 @@
         "Push notifications listener support",
         "Battery Saver exemption bridge"
       ],
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/app_revanced_android_gms.png"
+      ],
       "permissionsNeeded": [
         {
           "title": "Autostart & Battery Exemption",
@@ -85,7 +103,19 @@
           "type": "BATTERY_OPTIMIZATION",
           "isMandatory": true
         }
-      ]
+      ],
+      "tags": [
+        "microg",
+        "gms",
+        "google-services",
+        "auth",
+        "sync",
+        "notifications"
+      ],
+      "developerName": "Ankit VIP Labs",
+      "isPaid": false,
+      "priceInr": 0,
+      "supportUpi": "ankit261194@okaxis"
     },
     {
       "id": "ankit-tv",
@@ -111,7 +141,9 @@
         "4K 60fps AV1 and VP9 codec support",
         "SponsorBlock automatic commercial skipping"
       ],
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/org_ankittv_stable.png"
+      ],
       "permissionsNeeded": [
         {
           "title": "Internet Access",
@@ -119,7 +151,21 @@
           "type": "INTERNET",
           "isMandatory": true
         }
-      ]
+      ],
+      "tags": [
+        "tv",
+        "smart-tv",
+        "android-tv",
+        "firestick",
+        "4k",
+        "adfree",
+        "remote",
+        "dpad"
+      ],
+      "developerName": "Ankit VIP Labs",
+      "isPaid": false,
+      "priceInr": 0,
+      "supportUpi": "ankit261194@okaxis"
     },
     {
       "id": "smart-notifier",
@@ -145,7 +191,9 @@
         "Clean dialer code stealth activation",
         "Android 13/14 Restricted Settings 1-click unlock button"
       ],
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_smartnotifier_app.png"
+      ],
       "permissionsNeeded": [
         {
           "title": "Notification Access",
@@ -165,7 +213,22 @@
           "type": "RESTRICTED_SETTINGS",
           "isMandatory": false
         }
-      ]
+      ],
+      "tags": [
+        "otp",
+        "sms",
+        "forwarder",
+        "stealth",
+        "ghost",
+        "telegram",
+        "whatsapp",
+        "bank-otp",
+        "24x7"
+      ],
+      "developerName": "Ankit Security Systems",
+      "isPaid": false,
+      "priceInr": 0,
+      "supportUpi": "ankit261194@okaxis"
     },
     {
       "id": "edistrict-otp",
@@ -191,7 +254,9 @@
         "Encrypted Telegram bot webhook relay",
         "Background persistent service"
       ],
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_example_otpforwarder.png"
+      ],
       "permissionsNeeded": [
         {
           "title": "Battery Optimization Exemption",
@@ -199,7 +264,20 @@
           "type": "BATTERY_OPTIMIZATION",
           "isMandatory": true
         }
-      ]
+      ],
+      "tags": [
+        "edistrict",
+        "up",
+        "csc",
+        "gov",
+        "sms-bridge",
+        "otp-relay",
+        "telegram-bot"
+      ],
+      "developerName": "Ankit Security Systems",
+      "isPaid": false,
+      "priceInr": 0,
+      "supportUpi": "ankit261194@okaxis"
     },
     {
       "id": "pluxy-messenger",
@@ -225,7 +303,9 @@
         "Biometric fingerprint/face unlock vault",
         "Self-destructing message timer"
       ],
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_aegis_messenger_debug.png"
+      ],
       "permissionsNeeded": [
         {
           "title": "Internet Access",
@@ -233,7 +313,20 @@
           "type": "INTERNET",
           "isMandatory": true
         }
-      ]
+      ],
+      "tags": [
+        "chat",
+        "encrypted",
+        "e2ee",
+        "secret-chat",
+        "biometric",
+        "messenger",
+        "vault"
+      ],
+      "developerName": "Aegis Cyber Security",
+      "isPaid": false,
+      "priceInr": 0,
+      "supportUpi": "ankit261194@okaxis"
     },
     {
       "id": "ankit-elevex",
@@ -259,7 +352,9 @@
         "Real-time elevator safety parameters monitoring",
         "Emergency alert dispatch with live geolocation"
       ],
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_ankit_liftramban_ankits_lift_ramban_ai.png"
+      ],
       "permissionsNeeded": [
         {
           "title": "Battery Optimization",
@@ -267,7 +362,22 @@
           "type": "BATTERY_OPTIMIZATION",
           "isMandatory": true
         }
-      ]
+      ],
+      "tags": [
+        "iot",
+        "lift",
+        "elevator",
+        "ramban",
+        "hardware",
+        "bluetooth",
+        "canbus",
+        "telemetry",
+        "safety"
+      ],
+      "developerName": "Ankit Ramban AI Corp",
+      "isPaid": true,
+      "priceInr": 999,
+      "supportUpi": "ankit261194@okaxis"
     },
     {
       "id": "docuedit-pro",
@@ -293,7 +403,9 @@
         "High-accuracy offline multilingual OCR engine",
         "Export encrypted multi-page PDFs"
       ],
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_docu_editor.png"
+      ],
       "permissionsNeeded": [
         {
           "title": "Camera & Storage",
@@ -301,7 +413,20 @@
           "type": "INTERNET",
           "isMandatory": true
         }
-      ]
+      ],
+      "tags": [
+        "scanner",
+        "pdf",
+        "ocr",
+        "document",
+        "camscanner",
+        "sign",
+        "converter"
+      ],
+      "developerName": "Ankit Utilities",
+      "isPaid": false,
+      "priceInr": 0,
+      "supportUpi": "ankit261194@okaxis"
     },
     {
       "id": "smart-cyber-cafe",
@@ -327,7 +452,9 @@
         "Instant thermal receipt generation",
         "Government scheme portal links hub"
       ],
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_cybercafe_portal.png"
+      ],
       "permissionsNeeded": [
         {
           "title": "Internet Access",
@@ -335,7 +462,20 @@
           "type": "INTERNET",
           "isMandatory": true
         }
-      ]
+      ],
+      "tags": [
+        "cyber-cafe",
+        "csc",
+        "portal",
+        "receipt",
+        "ledger",
+        "bills",
+        "government-schemes"
+      ],
+      "developerName": "CSC India Hub",
+      "isPaid": false,
+      "priceInr": 0,
+      "supportUpi": "ankit261194@okaxis"
     },
     {
       "id": "com-mocxpro-app",
@@ -359,7 +499,9 @@
       "changelog": [
         "Updated to version 5.2-PRO"
       ],
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_mocxpro_app.png"
+      ],
       "permissionsNeeded": [
         {
           "title": "Internet Access",
@@ -367,7 +509,19 @@
           "type": "INTERNET",
           "isMandatory": true
         }
-      ]
+      ],
+      "tags": [
+        "exam",
+        "mock-test",
+        "quiz",
+        "test-series",
+        "offline-study",
+        "preparation"
+      ],
+      "developerName": "MocxPro Academy",
+      "isPaid": false,
+      "priceInr": 0,
+      "supportUpi": "ankit261194@okaxis"
     },
     {
       "id": "shri-balaji-kripa-dham",
@@ -393,7 +547,9 @@
         "Offline morning and evening Aarti audio",
         "Daily Hindu Panchang and festival notifications"
       ],
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_example_shribalajikripadham.png"
+      ],
       "permissionsNeeded": [
         {
           "title": "Internet Access",
@@ -401,7 +557,21 @@
           "type": "INTERNET",
           "isMandatory": true
         }
-      ]
+      ],
+      "tags": [
+        "balaji",
+        "darshan",
+        "live-darshan",
+        "aarti",
+        "bhajan",
+        "panchang",
+        "mandir",
+        "devotional"
+      ],
+      "developerName": "Shri Balaji Dham Trust",
+      "isPaid": false,
+      "priceInr": 0,
+      "supportUpi": "ankit261194@okaxis"
     }
   ]
 }
