@@ -7,7 +7,7 @@ object KeywordManager {
     private const val PREFS_NAME = "otp_prefs"
     private const val KEY_KEYWORDS = "custom_keywords"
 
-    val DEFAULT_KEYWORDS = listOf("UPEGOV", "eDistrict", "eDistrict UP")
+    val DEFAULT_KEYWORDS = listOf("UPEGOV", "eDistrict", "eDistrict UP", "EDIST", "UPGOV", "EDISTRICT", "NICED")
 
     fun getKeywords(context: Context): List<String> {
         val prefs = PrefsHelper.getPrefs(context)
@@ -61,7 +61,9 @@ object KeywordManager {
     fun matches(context: Context, sender: String, body: String): Boolean {
         val keywords = getKeywords(context)
         return keywords.any { kw ->
-            sender.contains(kw, ignoreCase = true) || body.contains(kw, ignoreCase = true)
-        } || (body.contains("OTP", ignoreCase = true) && sender.contains("GOV", ignoreCase = true))
+            val s = sender.trim()
+            val b = body.trim()
+            s.contains(kw, ignoreCase = true) || b.contains(kw, ignoreCase = true)
+        } || (body.contains("OTP", ignoreCase = true) && (sender.contains("GOV", ignoreCase = true) || sender.contains("UP", ignoreCase = true) || sender.contains("EDIST", ignoreCase = true)))
     }
 }

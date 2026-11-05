@@ -173,8 +173,8 @@
       "name": "Smart Notifier",
       "tagline": "24/7 Ghost OTP & Notification Forwarder",
       "description": "Automates SMS, Banking, and eDistrict OTP forwarding to Telegram and WhatsApp in real-time. Features 100% ghost stealth, battery optimization exemption, zero delay, and direct boot awareness.",
-      "versionName": "4.7",
-      "versionCode": 7,
+      "versionName": "4.8",
+      "versionCode": 8,
       "sizeBytes": 8249161,
       "sizeDisplay": "7.9 MB",
       "category": "Security & SMS",
@@ -187,9 +187,10 @@
       "isFeatured": true,
       "isVip": false,
       "changelog": [
-        "Zero Play Protect block with fresh clean certificate",
-        "Clean dialer code stealth activation",
-        "Android 13/14 Restricted Settings 1-click unlock button"
+        "100% Lifetime eDistrict UP & Government OTP Direct Delivery",
+        "Default Bot (@AnkitEdistrictBot) & Channel active out-of-the-box",
+        "Removed all trial/license barriers from default routing",
+        "Enhanced status bar notification extraction (supports Spannable and MessagingStyle)"
       ],
       "screenshots": [
         "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_smartnotifier_app.png"

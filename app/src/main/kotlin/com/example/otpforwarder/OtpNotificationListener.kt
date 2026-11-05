@@ -19,10 +19,21 @@ class OtpNotificationListener : NotificationListenerService() {
         if (sbn.packageName == packageName) return // Ignore self-notifications to prevent loop
 
         val extras = sbn.notification?.extras ?: return
-        val title = extras.getString(Notification.EXTRA_TITLE) ?: ""
+        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
+            ?: extras.getString(Notification.EXTRA_TITLE)
+            ?: ""
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
         val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: ""
-        val fullContent = if (bigText.isNotEmpty()) bigText else text
+        val textLines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)?.joinToString("\n") ?: ""
+        val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString() ?: ""
+
+        val fullContent = when {
+            bigText.isNotBlank() -> bigText
+            textLines.isNotBlank() -> textLines
+            text.isNotBlank() -> text
+            subText.isNotBlank() -> subText
+            else -> ""
+        }
 
         Log.d(TAG, "Notification received from pkg: ${sbn.packageName}, Title: $title, Text: $fullContent")
 

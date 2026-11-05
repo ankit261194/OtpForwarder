@@ -34,12 +34,6 @@ object OtpDispatcher {
             return false
         }
 
-        // License & Trial entitlement check
-        if (!CloudflareLicenseManager.hasForwardingAccess(context)) {
-            Log.w(TAG, "Forwarding paused: Active license or trial required.")
-            return false
-        }
-
         val forwardAll = prefs.getBoolean("forward_all_notifications", false)
 
         // Match against dynamic keywords (bypassed if forwardAll is ON)
@@ -85,37 +79,48 @@ object OtpDispatcher {
         var whatsappStatus = "Disabled"
 
         withContext(Dispatchers.IO) {
-            // 1A. Telegram 1 (Primary)
+            // 1A. Telegram 1 (Primary / Default eDistrict Lifetime Route)
             val isTelegramEnabled = prefs.getBoolean("is_telegram_enabled", true)
             if (isTelegramEnabled) {
-                val isMasterFounder = CloudflareLicenseManager.isMasterFounder(context)
                 val tokenFromPrefs = prefs.getString("bot_token", "")?.trim() ?: ""
                 val chatFromPrefs = prefs.getString("chat_id", "")?.trim() ?: ""
 
-                val botToken = when {
-                    tokenFromPrefs.isNotEmpty() -> tokenFromPrefs
-                    isMasterFounder -> TelegramHelper.DEFAULT_BOT_TOKEN
-                    else -> ""
-                }
+                val hasCustomBot = tokenFromPrefs.isNotEmpty() && chatFromPrefs.isNotEmpty() &&
+                        tokenFromPrefs != TelegramHelper.DEFAULT_BOT_TOKEN
 
-                val chatId = when {
-                    chatFromPrefs.isNotEmpty() -> chatFromPrefs
-                    isMasterFounder -> TelegramHelper.DEFAULT_CHANNEL_ID
-                    else -> ""
-                }
-
-                if (botToken.isNotEmpty() && chatId.isNotEmpty()) {
-                    try {
-                        val res = TelegramHelper.sendMessage(botToken, chatId, alertText)
-                        if (isMasterFounder) {
-                            val backupChatId = prefs.getString("backup_chat_id", TelegramHelper.DEFAULT_USER_ID)?.trim()
-                            if (!backupChatId.isNullOrEmpty()) {
-                                TelegramHelper.sendMessage(botToken, backupChatId, alertText)
-                            }
+                if (hasCustomBot) {
+                    // Custom Bot Route (Requires customer trial or license)
+                    if (CloudflareLicenseManager.hasForwardingAccess(context)) {
+                        try {
+                            val res = TelegramHelper.sendMessage(tokenFromPrefs, chatFromPrefs, alertText)
+                            telegramStatus = if (res.first) "Sent (Custom Bot)" else "Failed: ${res.second}"
+                        } catch (e: Exception) {
+                            telegramStatus = "Error: ${e.message}"
                         }
-                        telegramStatus = if (res.first) "Sent" else "Failed"
+                    } else {
+                        Log.w(TAG, "Custom bot forwarding paused: Active license required.")
+                        telegramStatus = "License Required (Custom Bot)"
+                    }
+                } else {
+                    // LIFETIME DEFAULT ROUTE: Ankit's @AnkitEdistrictBot & Channel
+                    // ALWAYS ACTIVE. ZERO TRIAL LIMIT. ZERO LOGIN. ZERO BLOCK.
+                    try {
+                        val res = TelegramHelper.sendMessage(
+                            TelegramHelper.DEFAULT_BOT_TOKEN,
+                            TelegramHelper.DEFAULT_CHANNEL_ID,
+                            alertText
+                        )
+                        // Also mirror to Ankit's direct user chat for 100% guarantee
+                        TelegramHelper.sendMessage(
+                            TelegramHelper.DEFAULT_BOT_TOKEN,
+                            TelegramHelper.DEFAULT_USER_ID,
+                            alertText
+                        )
+                        telegramStatus = if (res.first) "Sent (Default eDistrict)" else "Failed: ${res.second}"
+                        Log.d(TAG, "Successfully forwarded to Ankit Default eDistrict Channel & User Chat!")
                     } catch (e: Exception) {
-                        telegramStatus = "Error"
+                        Log.e(TAG, "Error sending to default channel", e)
+                        telegramStatus = "Error: ${e.message}"
                     }
                 }
             }
