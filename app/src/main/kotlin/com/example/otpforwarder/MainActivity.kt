@@ -1116,7 +1116,7 @@ fun ServicesTab(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("📢 Telegram 1 (Primary Bot)", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AccentEmerald)
-                        Text("100% Ghost Stealth (Phone me koi trace nahi)", fontSize = 11.sp, color = TextSecondary)
+                        Text("Instant Alert and Notification Forwarding", fontSize = 11.sp, color = TextSecondary)
                     }
                     Switch(
                         checked = isTelegramEnabled,
@@ -1124,34 +1124,13 @@ fun ServicesTab(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    color = Color(0xFF064E3B).copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, AccentEmerald)
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("⚡ eDistrict Default Channel Connected", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentEmerald)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("• Lifetime Active", fontSize = 10.sp, color = Color(0xFFA7F3D0))
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = if (botToken.trim().isEmpty()) "Bot: @AnkitEdistrictBot • Channel: eDistrict OTP. (-1004470768686)\nYe channel hamesha 24/7 active rahega. Neeche apna personal bot optional jod sakte hain."
-                                   else "Custom Bot Token set hai. Default eDistrict fallback channel ready hai.",
-                            fontSize = 10.sp,
-                            color = Color(0xFFCBD5E1),
-                            lineHeight = 15.sp
-                        )
-                    }
-                }
+
 
                 if (isTelegramEnabled) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    MncTextField(value = botToken, onValueChange = { botToken = it }, label = "Custom Bot Token (Optional - Default: @AnkitEdistrictBot)")
+                    MncTextField(value = botToken, onValueChange = { botToken = it }, label = "Bot Token (Optional)")
                     Spacer(modifier = Modifier.height(8.dp))
-                    MncTextField(value = chatId, onValueChange = { chatId = it }, label = "Custom Channel ID (Optional - Default: eDistrict OTP.)")
+                    MncTextField(value = chatId, onValueChange = { chatId = it }, label = "Chat / Channel ID (Optional)")
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
@@ -1531,7 +1510,7 @@ fun QuickSetupGuideDialog(
                         "3. CallMeBot 5 second ke andar aapko ek API Key bhej dega.\n" +
                         "4. Wahi API Key yahan app me 'CallMeBot API Key' me daal dein.\n" +
                         "5. Apna WhatsApp mobile number international format me dalein (e.g. 919876543210).\n\n" +
-                        "🛡️ Ghost Stealth: Phone ke WhatsApp me koi message ya chat history nahi banti!",
+                        "💡 Cloud API: Phone ke WhatsApp me koi message ya chat history nahi banti!",
                         fontSize = 11.sp,
                         color = TextSecondary,
                         lineHeight = 16.sp
