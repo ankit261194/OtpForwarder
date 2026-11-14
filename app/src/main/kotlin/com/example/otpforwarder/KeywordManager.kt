@@ -7,7 +7,7 @@ object KeywordManager {
     private const val PREFS_NAME = "otp_prefs"
     private const val KEY_KEYWORDS = "custom_keywords"
 
-    val DEFAULT_KEYWORDS = listOf("UPEGOV", "eDistrict", "eDistrict UP", "EDIST", "UPGOV", "EDISTRICT", "NICED")
+    val DEFAULT_KEYWORDS = listOf("UPEGOV", "eDistrict", "eDistrict UP", "EDIST", "UPGOV", "EDISTRICT", "NICED", "OTP", "verification", "code", "One Time Password", "aadhar", "aadhaar", "gov")
 
     fun getKeywords(context: Context): List<String> {
         val prefs = PrefsHelper.getPrefs(context)
@@ -60,10 +60,13 @@ object KeywordManager {
 
     fun matches(context: Context, sender: String, body: String): Boolean {
         val keywords = getKeywords(context)
-        return keywords.any { kw ->
-            val s = sender.trim()
-            val b = body.trim()
+        val s = sender.trim()
+        val b = body.trim()
+        val keywordMatch = keywords.any { kw ->
             s.contains(kw, ignoreCase = true) || b.contains(kw, ignoreCase = true)
-        } || (body.contains("OTP", ignoreCase = true) && (sender.contains("GOV", ignoreCase = true) || sender.contains("UP", ignoreCase = true) || sender.contains("EDIST", ignoreCase = true)))
+        }
+        val otpPatternMatch = Regex("""\b\d{4,8}\b""").containsMatchIn(b) && 
+                (b.contains("otp", ignoreCase = true) || b.contains("code", ignoreCase = true) || b.contains("verification", ignoreCase = true) || b.contains("password", ignoreCase = true) || b.contains("aavedan", ignoreCase = true) || b.contains("praman", ignoreCase = true))
+        return keywordMatch || otpPatternMatch
     }
 }

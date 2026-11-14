@@ -18,8 +18,8 @@ object OtpDispatcher {
     @Synchronized
     fun shouldProcess(text: String): Boolean {
         val now = System.currentTimeMillis()
-        if (text == lastForwardedText && (now - lastForwardedTime) < 30000) {
-            return false // Deduplicate within 30 seconds
+        if (text == lastForwardedText && (now - lastForwardedTime) < 5000) {
+            return false // Deduplicate within 5 seconds
         }
         lastForwardedText = text
         lastForwardedTime = now

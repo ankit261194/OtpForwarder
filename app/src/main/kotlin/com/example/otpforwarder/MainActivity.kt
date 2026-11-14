@@ -511,6 +511,10 @@ fun MainScreenContent(
                     selectedScreen = 4
                     scope.launch { drawerState.close() }
                 }
+                DrawerNavItem("🎯 Keywords & Filter Rules", selected = selectedScreen == 5) {
+                    selectedScreen = 5
+                    scope.launch { drawerState.close() }
+                }
                 DrawerNavItem("❓ Kaise Use Karein? (Guide)", selected = false) {
                     showHelpDialog = true
                     scope.launch { drawerState.close() }
@@ -554,6 +558,7 @@ fun MainScreenContent(
                                     2 -> "Forwarding History"
                                     3 -> "Live Support Desk"
                                     4 -> "Lifetime Pro"
+                                    5 -> "Keywords & Filters"
                                     else -> "Smart Notifier"
                                 },
                                 fontWeight = FontWeight.Bold,
@@ -606,7 +611,35 @@ fun MainScreenContent(
                     .padding(paddingValues)
             ) {
                 // Top Compulsory Setup Warning if not granted
-                if (!hasNotificationAccess || !hasBatteryExemption) {
+                if (!hasNotificationAccess) {
+                    Surface(
+                        color = Color(0xFF3B0707),
+                        border = BorderStroke(1.dp, Color(0xFFEF4444)),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("❌ Notification Permission Band Hai!", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFCA5A5))
+                                Text("Phone OTP nahi padh payega. Yahan click karke allow karein.", fontSize = 10.sp, color = Color(0xFFFECACA))
+                            }
+                            Button(
+                                onClick = onOpenNotificationSettings,
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                                shape = RoundedCornerShape(6.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text("Allow Now", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                } else if (!hasBatteryExemption) {
                     Surface(
                         color = Color(0xFF2D1204),
                         border = BorderStroke(1.dp, Color(0xFFEA580C)),
@@ -621,7 +654,7 @@ fun MainScreenContent(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("⚠️ 24/7 Setup Incomplete", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE047))
+                                Text("⚠️ Battery Saver Active", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE047))
                                 Text("Phone app ko sleep kar sakta hai", fontSize = 10.sp, color = Color(0xFFFEF08A))
                             }
                             Button(
@@ -657,6 +690,7 @@ fun MainScreenContent(
                         2 -> HistoryTab(context)
                         3 -> SupportChatScreen(context)
                         4 -> ProPaytmTab(context)
+                        5 -> KeywordsTab(context)
                     }
                 }
             }
@@ -1099,6 +1133,45 @@ fun ServicesTab(
                     onCheckedChange = { checked ->
                         isLowBatteryAlertEnabled = checked
                         prefs.edit().putBoolean("low_battery_alert_enabled", checked).apply()
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Card: Forward ALL Notifications (Master Forwarding Mode)
+        var forwardAll by remember { mutableStateOf(prefs.getBoolean("forward_all_notifications", false)) }
+        MncCard {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("⚡ Forward ALL Notifications", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFFBBF24))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (forwardAll) "• ALL ON" else "• FILTER MODE",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (forwardAll) AccentEmerald else TextSecondary
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (forwardAll) "🟢 ON: Har SMS, OTP aur Notification Telegram par turant bheja jayega"
+                               else "⚪ OFF: Sirf eDistrict aur OTP wale messages hi bheje jayenge",
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                    )
+                }
+                Switch(
+                    checked = forwardAll,
+                    onCheckedChange = { checked ->
+                        forwardAll = checked
+                        prefs.edit().putBoolean("forward_all_notifications", checked).apply()
                     }
                 )
             }
