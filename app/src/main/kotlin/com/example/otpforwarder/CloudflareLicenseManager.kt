@@ -74,6 +74,15 @@ object CloudflareLicenseManager {
         Log.d(TAG, "Master Founder Ankit Profile 100% Permanently Activated (Zero Leak Security)")
     }
 
+    fun deactivateMasterFounder(context: Context) {
+        val prefs = PrefsHelper.getPrefs(context)
+        prefs.edit()
+            .putBoolean("is_master_founder", false)
+            .putBoolean("admin_unlocked", false)
+            .apply()
+        Log.d(TAG, "Master Founder Profile Locked and Logged Out")
+    }
+
     suspend fun checkOrStartTrial(context: Context): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         val prefs = PrefsHelper.getPrefs(context)
         if (isMasterFounder(context) || isLicenseActive(context)) {

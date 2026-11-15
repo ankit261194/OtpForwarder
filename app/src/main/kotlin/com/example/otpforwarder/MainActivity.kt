@@ -43,6 +43,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.animation.core.*
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -2397,12 +2401,21 @@ fun FounderConsoleScreen(
     context: Context,
     onExit: () -> Unit
 ) {
-    BackHandler(enabled = true) { onExit() }
-
     val scope = rememberCoroutineScope()
     val prefs = remember { PrefsHelper.getPrefs(context) }
     var inputPassword by remember { mutableStateOf("") }
-    var isAuthorized by remember { mutableStateOf(CloudflareLicenseManager.isMasterFounder(context)) }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var isAuthorized by remember { mutableStateOf(false) }
+
+    val handleLogout = {
+        isAuthorized = false
+        inputPassword = ""
+        CloudflareLicenseManager.deactivateMasterFounder(context)
+        Toast.makeText(context, "🔒 Admin Console Logged Out & Locked", Toast.LENGTH_SHORT).show()
+        onExit()
+    }
+
+    BackHandler(enabled = true) { handleLogout() }
 
     // If not authorized, show Full Screen Executive Login
     if (!isAuthorized) {
@@ -2460,11 +2473,18 @@ fun FounderConsoleScreen(
                         onValueChange = { inputPassword = it },
                         label = { Text("Admin Master Password", color = Color(0xFF94A3B8), fontSize = 12.sp) },
                         placeholder = { Text("Enter Master Password...", color = Color(0xFF64748B), fontSize = 12.sp) },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Text(if (passwordVisible) "👁️" else "🙈", fontSize = 14.sp)
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color(0xFF6366F1),
+                            focusedBorderColor = Color(0xFFF59E0B),
                             unfocusedBorderColor = Color(0xFF334155),
                             focusedContainerColor = Color(0xFF090D1A),
                             unfocusedContainerColor = Color(0xFF090D1A)
@@ -2479,6 +2499,8 @@ fun FounderConsoleScreen(
                         onClick = {
                             if (inputPassword.trim() == "910010025123343") {
                                 isAuthorized = true
+                                inputPassword = ""
+                                CloudflareLicenseManager.activateMasterFounder(context)
                                 Toast.makeText(context, "✅ Welcome Ankit - Admin Access Granted", Toast.LENGTH_SHORT).show()
                             } else {
                                 Toast.makeText(context, "❌ Invalid Master Security Password", Toast.LENGTH_SHORT).show()
@@ -2525,7 +2547,7 @@ fun FounderConsoleScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = onExit) {
+                    IconButton(onClick = handleLogout) {
                         Text("←", fontSize = 24.sp, color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 },
@@ -2555,15 +2577,14 @@ fun FounderConsoleScreen(
                     }
                 },
                 actions = {
-                    OutlinedButton(
-                        onClick = onExit,
-                        border = BorderStroke(1.dp, Color(0xFFEF4444)),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
+                    Button(
+                        onClick = handleLogout,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
-                        Text("Exit ⎋", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("🚪 Logout", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A))
@@ -2632,7 +2653,8 @@ fun FounderConsoleScreen(
                             Toast.makeText(context, "✅ eDistrict Profile Permanently Loaded!", Toast.LENGTH_LONG).show()
                         },
                         onNavigateTab = { selectedTab = it },
-                        totalTickets = messagesList.size
+                        totalTickets = messagesList.size,
+                        onLogout = handleLogout
                     )
                     1 -> FounderRulesTab(
                         context = context,
@@ -2695,7 +2717,8 @@ fun FounderOverviewTab(
     context: Context,
     onActivateEdistrict: () -> Unit,
     onNavigateTab: (Int) -> Unit,
-    totalTickets: Int
+    totalTickets: Int,
+    onLogout: () -> Unit
 ) {
     val historyCount = remember { HistoryManager.getHistory(context).size }
     val deviceId = remember { CloudflareLicenseManager.getDeviceId(context) }
@@ -2840,6 +2863,31 @@ fun FounderOverviewTab(
                 if (pingStatus.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(pingStatus, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (pingStatus.startsWith("✅")) Color(0xFF34D399) else Color(0xFFF87171))
+                }
+            }
+        }
+
+        // Fast Action 3: Security & Session Logout Card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFF1F1218),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFFDC2626))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🔒 Admin Security & Session Control", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFFCA5A5))
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Admin Console ko turant logout aur lock karein taaki koi bhi bina master password ke isse na khol sake.", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = onLogout,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth().height(46.dp)
+                ) {
+                    Text("🚪 Logout & Lock Admin Console", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, color = Color.White)
                 }
             }
         }

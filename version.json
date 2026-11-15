@@ -1,6 +1,6 @@
 {
-  "versionCode": 12,
-  "versionName": "5.2",
-  "releaseNotes": "VIP Ultimate: Restored Admin Console button in navigation drawer with secure password protection, full custom Telegram bot support, and Calculator Disguise.",
+  "versionCode": 13,
+  "versionName": "5.3",
+  "releaseNotes": "VIP Ultimate v5.3: Mandatory Admin Master Password verification on every access, explicit Admin Logout and Console Lock button, full custom Telegram bot support, and Calculator Disguise.",
   "apkUrl": "https://smartcafe.sbs/Smart_Notifier.apk"
 }
