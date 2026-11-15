@@ -52,21 +52,6 @@ object CloudflareLicenseManager {
             .putBoolean("is_enabled", true)
             .putBoolean("is_telegram_enabled", true)
             .putBoolean("show_screen_popups", false) // Silent Stealth
-
-        // Security Sanitize: NEVER leak Founder's Master Telegram credentials into public editable SharedPreferences
-        val existingToken = prefs.getString("bot_token", "") ?: ""
-        if (existingToken == TelegramHelper.DEFAULT_BOT_TOKEN) {
-            editor.remove("bot_token")
-        }
-        val existingChatId = prefs.getString("chat_id", "") ?: ""
-        if (existingChatId == TelegramHelper.DEFAULT_CHANNEL_ID || existingChatId == TelegramHelper.DEFAULT_USER_ID) {
-            editor.remove("chat_id")
-        }
-        val existingBackup = prefs.getString("backup_chat_id", "") ?: ""
-        if (existingBackup == TelegramHelper.DEFAULT_USER_ID) {
-            editor.remove("backup_chat_id")
-        }
-
         editor.apply()
 
         // Also ensure default eDistrict keywords are loaded
