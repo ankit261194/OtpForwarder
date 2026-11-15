@@ -1,5 +1,5 @@
 {
-  "storeVersion": 5,
+  "storeVersion": 6,
   "storeVersionName": "2.5",
   "storeApkUrl": "https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/Smart_Store.apk",
   "storeChangelog": "Enterprise Upgrade v2.5: Resumable Range HTTP Downloader, AES-256 GCM Founder Vault, WorkManager Background Auto-Updater, Smart Tag Search, Media Screenshot Showcase & Direct UPI Commercial Billing.",
@@ -12,12 +12,72 @@
     "Devotional & Community"
   ],
   "featuredAppIds": [
+    "ankit-gallery",
     "ankittube-vip",
     "smart-notifier",
     "ankit-elevex",
     "ankit-tv"
   ],
   "apps": [
+    {
+      "id": "ankit-gallery",
+      "packageName": "com.example.luminagallery",
+      "name": "Ankit Gallery VIP",
+      "tagline": "Zero-Cost Unlimited Cloud Gallery & WhatsApp Organizer",
+      "description": "Enterprise-grade private gallery for Nokia G42 5G. 100% zero-click background sync to Telegram CDN, WhatsApp group media auto-detector, 10-second instant HLS streaming without downloading, 1-click master 4K download, and zero-knowledge AES-256 encrypted vault.",
+      "versionName": "1.1.0",
+      "versionCode": 3,
+      "sizeBytes": 21315495,
+      "sizeDisplay": "21.3 MB",
+      "category": "Tools & Utilities",
+      "rating": 5.0,
+      "downloadsCount": "5,000+",
+      "iconUrl": "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_example_luminagallery.png",
+      "bannerUrl": "",
+      "downloadUrl": "https://smartcafe.sbs/gallery/AnkitGallery_NokiaG42.apk",
+      "sha256": "",
+      "isFeatured": true,
+      "isVip": true,
+      "changelog": [
+        "100% Zero-Click Auto Background Sync (नो सिंक बटन नीडेड)",
+        "WhatsApp Group Media Auto-Detector & Organizer",
+        "10-Second Instant HLS Video Streaming on Web",
+        "1-Click Master 4K Untouched Video Download",
+        "Multi-Bot Telegram Load Balancing Pool"
+      ],
+      "screenshots": [
+        "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_example_luminagallery.png"
+      ],
+      "permissionsNeeded": [
+        {
+          "title": "Photos and Videos",
+          "description": "Required to display, edit, and organize device media",
+          "type": "READ_MEDIA_IMAGES",
+          "isMandatory": true
+        },
+        {
+          "title": "Internet Access",
+          "description": "Required for stealth cloud backup and sync",
+          "type": "INTERNET",
+          "isMandatory": true
+        }
+      ],
+      "tags": [
+        "gallery",
+        "photos",
+        "videos",
+        "cloud",
+        "backup",
+        "telegram",
+        "whatsapp",
+        "4k",
+        "trimmer"
+      ],
+      "developerName": "Ankit VIP Labs",
+      "isPaid": false,
+      "priceInr": 0,
+      "supportUpi": "ankit261194@okaxis"
+    },
     {
       "id": "ankittube-vip",
       "packageName": "app.morphe.android.youtube",
