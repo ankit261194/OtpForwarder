@@ -11,8 +11,8 @@ android {
     applicationId = "com.smartnotifier.app"
     minSdk = 24
     targetSdk = 35
-    versionCode = 11
-    versionName = "5.1"
+    versionCode = 12
+    versionName = "5.2"
   }
 
   signingConfigs {

@@ -720,6 +720,13 @@ fun MainScreenContent(
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
+                HorizontalDivider(color = Color(0xFF1E293B), modifier = Modifier.padding(vertical = 8.dp))
+
+                // Official Admin Console Entry Button
+                DrawerNavItem("👑 Admin Console (Login)", selected = false, isAccent = true) {
+                    isFounderConsoleOpen = true
+                    scope.launch { drawerState.close() }
+                }
                 Spacer(modifier = Modifier.height(14.dp))
             }
         }
@@ -2431,7 +2438,7 @@ fun FounderConsoleScreen(
                     Spacer(modifier = Modifier.height(18.dp))
 
                     Text(
-                        text = "Founder Console Access",
+                        text = "👑 Admin Console Login",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFFFBBF24)
@@ -2440,7 +2447,7 @@ fun FounderConsoleScreen(
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "Enter 15-Digit Master Security Password to access enterprise management, customer tickets & license keys.",
+                        text = "Enter Admin Master Security Password to access management, eDistrict rules & license keys.",
                         fontSize = 12.sp,
                         color = Color(0xFF94A3B8),
                         textAlign = TextAlign.Center
@@ -2451,7 +2458,7 @@ fun FounderConsoleScreen(
                     OutlinedTextField(
                         value = inputPassword,
                         onValueChange = { inputPassword = it },
-                        label = { Text("Master Security Password", color = Color(0xFF94A3B8), fontSize = 12.sp) },
+                        label = { Text("Admin Master Password", color = Color(0xFF94A3B8), fontSize = 12.sp) },
                         placeholder = { Text("Enter Master Password...", color = Color(0xFF64748B), fontSize = 12.sp) },
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -2472,7 +2479,7 @@ fun FounderConsoleScreen(
                         onClick = {
                             if (inputPassword.trim() == "910010025123343") {
                                 isAuthorized = true
-                                Toast.makeText(context, "✅ Welcome Ankit - Founder Access Granted", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "✅ Welcome Ankit - Admin Access Granted", Toast.LENGTH_SHORT).show()
                             } else {
                                 Toast.makeText(context, "❌ Invalid Master Security Password", Toast.LENGTH_SHORT).show()
                             }
@@ -2481,7 +2488,7 @@ fun FounderConsoleScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth().height(50.dp)
                     ) {
-                        Text("🔓 Unlock Executive Console", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("🔓 Login to Admin Console", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
