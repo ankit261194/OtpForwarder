@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Notifier v5.0 - Official Download & Update</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --accent: #10b981;
+      --bg: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.85);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0b0f19 0%, #1e1b4b 50%, #0f172a 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 520px;
+      width: 100%;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(37, 99, 235, 0.15);
+      text-align: center;
+    }
+
+    .app-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 20px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
+    }
+
+    .app-icon svg {
+      width: 44px;
+      height: 44px;
+      fill: white;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .cta-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 18px 24px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      font-weight: 800;
+      border-radius: 16px;
+      box-shadow: 0 12px 25px rgba(16, 185, 129, 0.35);
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 30px rgba(16, 185, 129, 0.45);
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    }
+
+    .btn-subtext {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    .info-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      margin: 24px 0;
+      text-align: left;
+    }
+
+    .info-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fbbf24;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .steps {
+      list-style: none;
+      font-size: 13px;
+      color: #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .steps li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      line-height: 1.4;
+    }
+
+    .step-num {
+      background: #334155;
+      color: #38bdf8;
+      font-weight: 800;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .qr-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .qr-title {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .qr-box {
+      background: white;
+      padding: 10px;
+      border-radius: 14px;
+      display: inline-block;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .qr-box img {
+      width: 140px;
+      height: 140px;
+      display: block;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 11px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="app-icon">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
+      </svg>
+    </div>
+
+    <div class="badge">Official Release v5.0 (Build 10)</div>
+    <h1>Smart Notifier</h1>
+    <p class="subtitle">⚡ Forward ALL Notifications & OTP Alerts to Telegram<br>eDistrict • Bank OTP • SMS Alerts</p>
+
+    <a href="https://github.com/ankit261194/OtpForwarder/releases/download/v1.0.0-catalog/Smart_Notifier.apk" class="cta-btn">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+      </svg>
+      Download APK (v5.0)
+    </a>
+    <div class="btn-subtext">Direct Mobile APK • 8.2 MB • Package Install Permission Enabled</div>
+
+    <div class="info-card">
+      <div class="info-title">
+        <span>⚠️</span> जरूरी जानकारी (One-Time Update)
+      </div>
+      <ul class="steps">
+        <li>
+          <span class="step-num">1</span>
+          <span>पुराने ऐप में इन-ऐप अपडेट एरर (<code>REQUEST_INSTALL_PACKAGES</code>) आ रहा था क्योंकि Android की सुरक्षा नीति के कारण पुराना ऐप नया ऐप खुद इनस्टॉल नहीं कर पा रहा था।</span>
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          <span>बस एक बार ऊपर दिए गए <b>Download APK</b> बटन पर क्लिक करके फाइल डाउनलोड करें और <b>Update / Install</b> दबाएं।</span>
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          <span>v5.0 इंस्टॉल होने के बाद <b>"⚡ Forward ALL Notifications"</b> स्विच ऑन करें। आगे से सारे अपडेट ऐप के अंदर ही डायरेक्ट होंगे!</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="qr-section">
+      <div class="qr-title">📱 मोबाइल से स्कैन करके तुरंत डाउनलोड करें:</div>
+      <div class="qr-box">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fgithub.com%2Fankit261194%2FOtpForwarder%2Freleases%2Fdownload%2Fv1.0.0-catalog%2FSmart_Notifier.apk" alt="QR Code to Download APK">
+      </div>
+    </div>
+
+    <div class="footer">
+      Smart Notifier v5.0 • Developed for Ankit Chaudhary • Secure Telegram Forwarder
+    </div>
+  </div>
+</body>
+</html>
