@@ -25,8 +25,8 @@
       "name": "Ankit Gallery VIP",
       "tagline": "Zero-Cost Unlimited Cloud Gallery & WhatsApp Organizer",
       "description": "Enterprise-grade private gallery for Nokia G42 5G. 100% zero-click background sync to Telegram CDN, WhatsApp group media auto-detector, 10-second instant HLS streaming without downloading, 1-click master 4K download, and zero-knowledge AES-256 encrypted vault.",
-      "versionName": "1.1.0",
-      "versionCode": 3,
+      "versionName": "1.2.0",
+      "versionCode": 4,
       "sizeBytes": 21217066,
       "sizeDisplay": "21.2 MB",
       "category": "Tools & Utilities",
@@ -39,11 +39,11 @@
       "isFeatured": true,
       "isVip": true,
       "changelog": [
-        "100% Zero-Click Auto Background Sync (नो सिंक बटन नीडेड)",
-        "WhatsApp Group Media Auto-Detector & Organizer",
-        "10-Second Instant HLS Video Streaming on Web",
-        "1-Click Master 4K Untouched Video Download",
-        "Multi-Bot Telegram Load Balancing Pool"
+        "100% फुल स्क्रीन लॉगिन/साइनअप (Zero Popups)",
+        "बैक करने पर बैक (No Accidental Exit)",
+        "क्लीनर में असली वीडियो प्ले व ऑडियो सपोर्ट",
+        "फोटो व वीडियो एडिटिंग टूल्स (Crop, Rotate, Filter, Trim)",
+        "100% जीरो-क्लिक ऑटोमैटिक क्लाउड सिंक"
       ],
       "screenshots": [
         "https://raw.githubusercontent.com/ankit261194/OtpForwarder/main/assets/icons/com_example_luminagallery.png"
